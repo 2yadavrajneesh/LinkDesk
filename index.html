@@ -4,10 +4,15 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>LinkDesk</title>
+<meta name="description" content="LinkDesk makes spreadsheet links clickable, pulls links out of pasted text, Word and PDF files, and opens them in batches. It runs in your browser and your files never leave your device.">
+<meta name="theme-color" content="#1F5FD6">
+<meta property="og:type" content="website">
+<meta property="og:title" content="LinkDesk">
+<meta property="og:description" content="LinkDesk makes spreadsheet links clickable, pulls links out of pasted text, Word and PDF files, and opens them in batches. It runs in your browser and your files never leave your device.">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 36 36'%3E%3Crect width='36' height='36' rx='8' fill='%23121C26'/%3E%3Cg fill='%236B9BFF'%3E%3Crect x='6' y='6' width='6' height='6' rx='1.5'/%3E%3Crect x='15' y='6' width='6' height='6' rx='1.5'/%3E%3Crect x='24' y='6' width='6' height='6' rx='1.5'/%3E%3Crect x='6' y='15' width='6' height='6' rx='1.5'/%3E%3C/g%3E%3Cg fill='%23566472'%3E%3Crect x='15' y='15' width='6' height='6' rx='1.5'/%3E%3Crect x='24' y='15' width='6' height='6' rx='1.5'/%3E%3Crect x='6' y='24' width='6' height='6' rx='1.5'/%3E%3Crect x='15' y='24' width='6' height='6' rx='1.5'/%3E%3Crect x='24' y='24' width='6' height='6' rx='1.5'/%3E%3C/g%3E%3C/svg%3E">
 </head>
 <body>
 
-<meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Schibsted+Grotesk:wght@400;500;600;700;800&display=swap">
@@ -539,7 +544,30 @@ tr.is-opened td:not(.act) { color: var(--muted); }
 
 <div id="toasts" aria-live="polite"></div>
 
-<script>var LD = {};</script>
+<script>
+/* File safety limits, shared by all three tools */
+var LD = {
+  MAX_FILE: 25 * 1024 * 1024,
+  MAX_LINKS: 5000,
+  MAX_CELLS: 1000000,
+  MAX_TEXT: 2000000,
+  MAX_PDF_PAGES: 300,
+  MAX_ZIP_ENTRIES: 2000,
+  MAX_PART_CHARS: 15000000,
+  checkFile: function (f) {
+    return f && f.size > LD.MAX_FILE ? 'That file is ' + (f.size / 1048576).toFixed(1) + ' MB. The limit is 25 MB.' : '';
+  },
+  checkCells: function (wb) {
+    wb.SheetNames.forEach(function (n) {
+      var ws = wb.Sheets[n];
+      if (ws && ws['!ref']) {
+        var r = XLSX.utils.decode_range(ws['!ref']);
+        if ((r.e.r - r.s.r + 1) * (r.e.c - r.s.c + 1) > LD.MAX_CELLS) throw new Error('big');
+      }
+    });
+  }
+};
+</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
 (function () {
@@ -676,8 +704,11 @@ tr.is-opened td:not(.act) { color: var(--muted); }
       var was = Object.prototype.hasOwnProperty.call(prev, key);
       out.push({ url: url, label: r.label || ('Row ' + (r.row || idx + 1)), opened: was, at: was ? prev[key] : null });
     });
+    var capped = out.length > LD.MAX_LINKS;
+    if (capped) out = out.slice(0, LD.MAX_LINKS);
     S.raw = raw; S.items = out; S.batchFilter = 'all'; S.limit = 150; S.manual = [];
     save(); renderAll();
+    if (capped) toast('Only the first ' + LD.MAX_LINKS.toLocaleString() + ' links were kept.', 'warn');
     return skipped;
   }
 
@@ -687,17 +718,21 @@ tr.is-opened td:not(.act) { color: var(--muted); }
   }
   function readFile(file) {
     if (typeof XLSX === 'undefined') { toast('The spreadsheet reader did not load. Use Paste links instead.', 'warn'); return; }
+    var tooBig = LD.checkFile(file);
+    if (tooBig) { toast(tooBig, 'warn'); return; }
     var r = new FileReader();
     r.onload = function (e) {
       try {
         WB = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
+        LD.checkCells(WB);
         var sel = $('sheetSel');
         sel.innerHTML = WB.SheetNames.map(function (n) { return '<option value="' + esc(n) + '">' + esc(n) + '</option>'; }).join('');
         S.source = { name: file.name, sample: false };
         $('cfg').hidden = false;
         onSheetChange();
       } catch (err) {
-        toast('That file could not be read. Use a valid .xlsx, .xls or .csv file.', 'warn');
+        WB = null;
+        toast(err && err.message === 'big' ? 'That spreadsheet is too large. The limit is 1,000,000 cells.' : 'That file could not be read. Use a valid .xlsx, .xls or .csv file.', 'warn');
       }
     };
     r.readAsArrayBuffer(file);
@@ -793,7 +828,9 @@ tr.is-opened td:not(.act) { color: var(--muted); }
     applyRaw(raw, false);
   }
   function importPasted() {
-    var lines = $('pasteTa').value.split(/\r?\n/);
+    var txt = $('pasteTa').value;
+    if (txt.length > LD.MAX_TEXT) { txt = txt.slice(0, LD.MAX_TEXT); toast('The pasted text was very long. Only the first 2 million characters were read.', 'warn'); }
+    var lines = txt.split(/\r?\n/);
     var add = [];
     lines.forEach(function (line, idx) {
       var parts = line.split('\t').map(function (s) { return s.trim(); }).filter(Boolean);
@@ -1214,6 +1251,7 @@ tr.is-opened td:not(.act) { color: var(--muted); }
   function build() {
     var bare = $('mBare').checked;
     var wb = M.buf ? XLSX.read(M.buf, { type: 'array' }) : exampleWorkbook();
+    LD.checkCells(wb);
     M.wb = wb; M.stats = convert(wb, bare);
     if (M.sheet >= wb.SheetNames.length) M.sheet = 0;
     render();
@@ -1292,13 +1330,15 @@ tr.is-opened td:not(.act) { color: var(--muted); }
   function loadFile(file) {
     if (!file) return;
     if (typeof XLSX === 'undefined') { $('mHint').textContent = 'The spreadsheet reader did not load. Reload the page.'; return; }
+    var tooBig = LD.checkFile(file);
+    if (tooBig) { $('mHint').className = 'hint mk-hint warn'; $('mHint').textContent = tooBig; return; }
     file.arrayBuffer().then(function (buf) {
       M.buf = buf; M.name = file.name; M.example = false; M.sheet = 0;
       $('mDropTitle').textContent = file.name + '. Choose another file to replace it.';
       try { build(); } catch (e) {
         M.buf = null; M.example = true; build();
         $('mHint').className = 'hint mk-hint warn';
-        $('mHint').textContent = 'That file could not be read. Check that it is a real Excel or CSV file.';
+        $('mHint').textContent = e && e.message === 'big' ? 'That spreadsheet is too large. The limit is 1,000,000 cells.' : 'That file could not be read. Check that it is a real Excel or CSV file.';
       }
     });
   }
@@ -1501,6 +1541,7 @@ tr.is-opened td:not(.act) { color: var(--muted); }
   function readDocx(buf, opts) {
     return loadScript(JSZIP).then(function () { return JSZip.loadAsync(buf); }).then(function (zip) {
       var names = Object.keys(zip.files).filter(function (n) { return /^word\/(document|footnotes|endnotes|header\d*|footer\d*)\.xml$/.test(n); });
+      if (Object.keys(zip.files).length > LD.MAX_ZIP_ENTRIES) throw new Error('big');
       if (!names.length) throw new Error('nodoc');
       var all = [];
       return names.reduce(function (chain, name) {
@@ -1508,6 +1549,7 @@ tr.is-opened td:not(.act) { color: var(--muted); }
           var base = name.split('/').pop();
           var relName = 'word/_rels/' + base + '.rels';
           return Promise.all([zip.file(name).async('string'), zip.file(relName) ? zip.file(relName).async('string') : Promise.resolve('')]).then(function (r) {
+            if (r[0].length > LD.MAX_PART_CHARS) throw new Error('big');
             var rels = {};
             if (r[1]) {
               var rd = new DOMParser().parseFromString(r[1], 'application/xml').getElementsByTagName('Relationship');
@@ -1548,7 +1590,8 @@ tr.is-opened td:not(.act) { color: var(--muted); }
       return pdfjsLib.getDocument({ data: new Uint8Array(buf) }).promise;
     }).then(function (pdf) {
       var all = [], chars = 0, pages = [];
-      for (var n = 1; n <= pdf.numPages; n++) pages.push(n);
+      var lastPage = Math.min(pdf.numPages, LD.MAX_PDF_PAGES);
+      for (var n = 1; n <= lastPage; n++) pages.push(n);
       return pages.reduce(function (chain, n) {
         return chain.then(function () {
           return pdf.getPage(n).then(function (page) {
@@ -1570,25 +1613,34 @@ tr.is-opened td:not(.act) { color: var(--muted); }
             });
           });
         });
-      }, Promise.resolve()).then(function () { return { items: all, chars: chars }; });
+      }, Promise.resolve()).then(function () { return { items: all, chars: chars, pages: pdf.numPages }; });
     });
   }
 
   /* ---------- running an extraction ---------- */
   function opts() { return { dedupe: $('exDedupe').checked, repair: $('exRepair').checked, bare: $('exBare').checked }; }
   function setItems(items, name, example, note) {
-    E.items = items; E.name = name; E.example = example; E.limit = 300; E.note = note || ''; E.busy = '';
+    note = note || '';
+    if (items.length > LD.MAX_LINKS) {
+      items = items.slice(0, LD.MAX_LINKS);
+      note = (note ? note + ' ' : '') + 'Only the first ' + LD.MAX_LINKS.toLocaleString() + ' links are kept.';
+    }
+    E.items = items; E.name = name; E.example = example; E.limit = 300; E.note = note; E.busy = '';
     render();
   }
   function runText() {
     var o = opts();
-    var items = finish(fromText($('exText').value, function (i) { return 'Line ' + (i + 1); }, o), o);
-    var isSample = $('exText').value === SAMPLE;
-    setItems(items, isSample ? 'Example text' : 'Pasted text', isSample, '');
+    var text = $('exText').value, cut = '';
+    if (text.length > LD.MAX_TEXT) { text = text.slice(0, LD.MAX_TEXT); cut = 'The text was very long. Only the first 2 million characters were read.'; }
+    var items = finish(fromText(text, function (i) { return 'Line ' + (i + 1); }, o), o);
+    var isSample = text === SAMPLE;
+    setItems(items, isSample ? 'Example text' : 'Pasted text', isSample, cut);
   }
   var lastFile = null;
   function runFile(file) {
     if (!file) return;
+    var tooBig = LD.checkFile(file);
+    if (tooBig) { toast(tooBig, 'warn'); return; }
     lastFile = file;
     var name = file.name, ext = (name.split('.').pop() || '').toLowerCase();
     var o = opts();
@@ -1598,7 +1650,8 @@ tr.is-opened td:not(.act) { color: var(--muted); }
     var job;
     if (ext === 'docx') job = file.arrayBuffer().then(function (b) { return readDocx(b, o); }).then(function (items) { return { items: items, note: '' }; });
     else if (ext === 'pdf') job = file.arrayBuffer().then(function (b) { return readPdf(b, o); }).then(function (r) {
-      return { items: r.items, note: r.chars < 20 ? 'This PDF has no selectable text. It is probably a scan, so no links can be read from it.' : 'Long addresses in PDFs can break at line ends. Check the list before you rely on it.' };
+      var cut = r.pages > LD.MAX_PDF_PAGES ? 'Only the first ' + LD.MAX_PDF_PAGES + ' of ' + r.pages + ' pages were read. ' : '';
+      return { items: r.items, note: cut + (r.chars < 20 ? 'This PDF has no selectable text. It is probably a scan, so no links can be read from it.' : 'Long addresses in PDFs can break at line ends. Check the list before you rely on it.') };
     });
     else job = file.text().then(function (t) { return { items: fromText(t, function (i) { return 'Line ' + (i + 1); }, o), note: '' }; });
     job.then(function (r) {
@@ -1606,6 +1659,7 @@ tr.is-opened td:not(.act) { color: var(--muted); }
       setItems(finish(r.items, o), name, false, r.note);
     }).catch(function (err) {
       E.busy = ''; render();
+      if (err && err.message === 'big') { toast('That document is too large or complex to read safely.', 'warn'); return; }
       toast(ext === 'docx' ? 'That Word file could not be read. Check that it is a .docx file.' : ext === 'pdf' ? 'That PDF could not be read. Check that the file is not damaged or locked.' : 'That file could not be read.', 'warn');
     });
   }

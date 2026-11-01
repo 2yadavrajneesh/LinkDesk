@@ -16,6 +16,15 @@ Open `index.html` in a browser.
 
 It is a static site with no build step. On Vercel, import this repository and deploy with the default settings.
 
+## Safety limits
+
+- Files up to 25 MB.
+- Spreadsheets up to 1,000,000 cells.
+- Up to 5,000 links per list.
+- Pasted text up to 2 million characters.
+- PDFs read up to 300 pages.
+- Word files that expand into very large content are refused.
+
 ## Notes
 
 - Libraries load from cdnjs (SheetJS always; JSZip and PDF.js only when a Word or PDF file is added).
