@@ -339,7 +339,7 @@ tr.is-opened td:not(.act) { color: var(--muted); }
       </svg>
       <div>
         <h1>LinkDesk</h1>
-        <p>Make spreadsheet links clickable, extract links from text and documents, then open them in batches</p>
+        <p id="tagline">Open spreadsheet links in batches</p>
       </div>
     </div>
     <div class="top-actions"><span class="top-actions" id="topTools">
@@ -1391,12 +1391,18 @@ var LD = {
   });
 
   /* view switching */
+  var TAGS = {
+    maker: 'Make spreadsheet links clickable',
+    extract: 'Extract links from text, Word and PDF files',
+    batch: 'Open spreadsheet links in batches'
+  };
   function show(v) {
     if (v !== 'maker' && v !== 'extract') v = 'batch';
     $('view-maker').hidden = v !== 'maker';
     $('view-extract').hidden = v !== 'extract';
     $('view-batch').hidden = v !== 'batch';
     $('topTools').hidden = v !== 'batch';
+    $('tagline').textContent = TAGS[v];
     document.querySelectorAll('.vt').forEach(function (b) { b.setAttribute('aria-selected', String(b.getAttribute('data-view') === v)); });
     try { localStorage.setItem(LSV, v); } catch (e) {}
   }
