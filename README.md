@@ -18,7 +18,7 @@ It is a static site with no build step. On Vercel, import this repository and de
 
 ## Safety limits
 
-- Files up to 25 MB.
+- Files up to 100 MB.
 - Spreadsheets up to 1,000,000 cells.
 - Up to 5,000 links per list.
 - Pasted text up to 2 million characters.
