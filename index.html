@@ -1,0 +1,1702 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>LinkDesk</title>
+</head>
+<body>
+
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Schibsted+Grotesk:wght@400;500;600;700;800&display=swap">
+<style>
+/* Layout: two working panels (load, launch) over a batch map and a link table. Batches are drawn as dot matrices, one dot per link. */
+:root {
+  --bg: #EEF1F4;
+  --surface: #FFFFFF;
+  --sunken: #E5EAEF;
+  --ink: #121C26;
+  --muted: #566472;
+  --line: #D6DDE4;
+  --line-strong: #9AA8B5;
+  --accent: #1F5FD6;
+  --accent-ink: #FFFFFF;
+  --accent-soft: #E3EBFB;
+  --ok: #1A7F52;
+  --ok-soft: #DDF1E7;
+  --warn: #9A5A07;
+  --warn-soft: #FBEBD0;
+  --danger: #B3261E;
+  --ui: "Schibsted Grotesk", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0D1318;
+    --surface: #151D24;
+    --sunken: #1C262E;
+    --ink: #E7EDF2;
+    --muted: #93A1AE;
+    --line: #27333D;
+    --line-strong: #4A5B69;
+    --accent: #6B9BFF;
+    --accent-ink: #0A1630;
+    --accent-soft: #1A2A4A;
+    --ok: #4FCB91;
+    --ok-soft: #12332A;
+    --warn: #E7B25A;
+    --warn-soft: #3A2B10;
+    --danger: #FF8A80;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0D1318;
+  --surface: #151D24;
+  --sunken: #1C262E;
+  --ink: #E7EDF2;
+  --muted: #93A1AE;
+  --line: #27333D;
+  --line-strong: #4A5B69;
+  --accent: #6B9BFF;
+  --accent-ink: #0A1630;
+  --accent-soft: #1A2A4A;
+  --ok: #4FCB91;
+  --ok-soft: #12332A;
+  --warn: #E7B25A;
+  --warn-soft: #3A2B10;
+  --danger: #FF8A80;
+  color-scheme: dark;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--ui);
+  font-size: 14px;
+  line-height: 1.5;
+}
+.page {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding-block: 20px 56px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.ic { width: 16px; height: 16px; flex: none; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+h1, h2, h3, p { margin: 0; }
+
+/* Header */
+.top { display: flex; align-items: center; justify-content: space-between; gap: 12px 20px; flex-wrap: wrap; }
+.brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.mark { width: 36px; height: 36px; flex: none; }
+.mark rect { fill: var(--line-strong); }
+.mark rect.on { fill: var(--accent); }
+.brand h1 { font-size: 22px; font-weight: 800; letter-spacing: -0.02em; line-height: 1.1; }
+.brand p { color: var(--muted); font-size: 13px; }
+.top-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* Buttons */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  height: 36px; padding: 0 14px;
+  border: 1px solid var(--line); background: var(--surface); color: var(--ink);
+  border-radius: 8px; font: 600 13px var(--ui); cursor: pointer; white-space: nowrap;
+  transition: border-color .15s, background-color .15s, filter .15s;
+}
+.btn:hover { border-color: var(--line-strong); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.btn.primary:hover { filter: brightness(1.08); }
+.btn.lg { height: 50px; width: 100%; font-size: 15px; border-radius: 10px; }
+.btn.sm { height: 32px; padding: 0 11px; font-size: 12.5px; }
+.btn.icon { width: 36px; padding: 0; }
+.btn.sm.icon { width: 32px; }
+.btn:disabled { opacity: .45; cursor: not-allowed; }
+.link { background: none; border: 0; padding: 0; color: var(--accent); font: 600 13px var(--ui); cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+.link.danger { color: var(--danger); }
+
+/* Cards */
+.deck { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.08fr); gap: 20px; align-items: start; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.card-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.card-head h2 { font-size: 16px; font-weight: 700; letter-spacing: -0.005em; }
+.step { width: 24px; height: 24px; border-radius: 50%; background: var(--ink); color: var(--surface); font: 700 12px var(--ui); display: inline-flex; align-items: center; justify-content: center; }
+.chip { margin-left: auto; font: 500 12px var(--mono); color: var(--muted); background: var(--sunken); border-radius: 999px; padding: 3px 10px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.chip.sample { color: var(--warn); background: var(--warn-soft); }
+
+/* Drop zone */
+.drop { display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center; padding: 26px 16px; border: 1.5px dashed var(--line-strong); border-radius: 10px; background: var(--bg); cursor: pointer; transition: border-color .15s, background-color .15s; }
+.drop:hover, .drop.over, .drop:focus-within { border-color: var(--accent); background: var(--accent-soft); }
+.drop .drop-ic { color: var(--accent); }
+.drop .drop-ic .ic { width: 26px; height: 26px; }
+.drop strong { font-size: 15px; }
+.drop small { color: var(--muted); font-size: 12.5px; }
+.cfg { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.field label { font-size: 12px; font-weight: 600; color: var(--muted); }
+select, input[type="number"], textarea {
+  width: 100%; border: 1px solid var(--line); background: var(--bg); color: var(--ink);
+  border-radius: 8px; font: 500 13px var(--ui); padding: 7px 10px; min-width: 0;
+}
+select { height: 36px; }
+.src-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.src-line { color: var(--muted); font-size: 13px; }
+.src-line b { color: var(--ink); font-variant-numeric: tabular-nums; }
+
+/* Launch */
+.eyebrow { font: 600 11.5px var(--ui); text-transform: uppercase; letter-spacing: 0.09em; color: var(--muted); }
+.next { display: flex; flex-direction: column; gap: 6px; }
+.big-row { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.big { font-size: 60px; font-weight: 800; letter-spacing: -0.035em; line-height: 1; font-variant-numeric: tabular-nums; }
+.big-sub { color: var(--muted); font-size: 14px; font-variant-numeric: tabular-nums; }
+.hosts { font: 400 12.5px var(--mono); color: var(--muted); overflow-wrap: anywhere; }
+.progress { display: flex; flex-direction: column; gap: 8px; }
+.bar { height: 8px; border-radius: 999px; background: var(--sunken); overflow: hidden; }
+.bar > i { display: block; height: 100%; background: var(--ok); border-radius: 999px; transition: width .3s ease; }
+.stats { display: flex; gap: 6px 18px; flex-wrap: wrap; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.stats b { color: var(--ink); font-weight: 700; }
+.hint { font-size: 12.5px; color: var(--muted); }
+kbd { font: 500 11.5px var(--mono); background: var(--sunken); border: 1px solid var(--line); border-radius: 5px; padding: 1px 6px; }
+.settings { display: flex; flex-wrap: wrap; gap: 12px 22px; align-items: center; padding-top: 16px; border-top: 1px solid var(--line); }
+.stepper { display: inline-flex; align-items: center; gap: 6px; }
+.stepper input { width: 58px; text-align: center; font-weight: 700; font-variant-numeric: tabular-nums; -moz-appearance: textfield; }
+.stepper input::-webkit-outer-spin-button, .stepper input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.settings .lbl { font-size: 12.5px; font-weight: 600; color: var(--muted); }
+.presets { display: inline-flex; gap: 4px; }
+.presets button { height: 30px; min-width: 38px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); border-radius: 7px; font: 600 12.5px var(--ui); cursor: pointer; }
+.presets button[aria-pressed="true"] { background: var(--ink); color: var(--surface); border-color: var(--ink); }
+.check { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer; }
+.check input { width: 16px; height: 16px; accent-color: var(--accent); }
+.check code { font: 500 12px var(--mono); }
+.empty { color: var(--muted); padding: 10px 0; }
+.done-mark { display: inline-flex; align-items: center; gap: 8px; color: var(--ok); font-weight: 700; font-size: 18px; }
+.done-mark .ic { width: 22px; height: 22px; }
+
+/* Blocked tabs panel */
+.manual { background: var(--warn-soft); border: 1px solid var(--warn); border-radius: 12px; padding: 18px 20px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.manual h2 { font-size: 15px; font-weight: 700; color: var(--warn); }
+.manual p { font-size: 13px; }
+.manual-list { list-style: none; margin: 0; padding: 0; max-height: 240px; overflow-y: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; }
+.manual-list li { display: flex; align-items: center; gap: 10px; padding: 7px 12px; border-bottom: 1px solid var(--line); min-width: 0; }
+.manual-list li:last-child { border-bottom: 0; }
+.manual-list a { color: var(--accent); font: 400 12.5px var(--mono); overflow-wrap: anywhere; min-width: 0; flex: 1; }
+.manual-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.m-head { display: flex; align-items: baseline; justify-content: space-between; gap: 6px 16px; flex-wrap: wrap; }
+.m-cur { display: flex; flex-direction: column; gap: 8px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px; min-width: 0; }
+.m-cur .t { font-weight: 700; font-size: 15px; overflow-wrap: anywhere; }
+.m-cur .u { font: 400 12.5px var(--mono); color: var(--muted); overflow-wrap: anywhere; }
+a.btn { text-decoration: none; }
+.manual .bar { background: var(--surface); }
+.manual details summary { cursor: pointer; font-weight: 600; font-size: 13px; padding: 2px 0 8px; }
+
+/* Batch map */
+.sec-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px 16px; flex-wrap: wrap; }
+.sec-head h2 { font-size: 17px; font-weight: 700; }
+.sec-head p { color: var(--muted); font-size: 13px; }
+.tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+.tile { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.tile.next-up { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+.tile.finished { border-color: var(--ok); background: var(--ok-soft); }
+.tile-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.tile-n { font-weight: 700; font-size: 14px; }
+.tile-flag { font: 600 10.5px var(--ui); text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent); }
+.tile.finished .tile-flag { color: var(--ok); }
+.tile-count { font: 500 12px var(--mono); color: var(--muted); font-variant-numeric: tabular-nums; }
+.range { font-size: 12.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.dots { display: grid; grid-template-columns: repeat(10, 9px); gap: 3px; }
+.dots i { width: 9px; height: 9px; border-radius: 2px; border: 1px solid var(--line-strong); }
+.dots i.on { background: var(--ok); border-color: var(--ok); }
+.tile-actions { display: flex; gap: 6px; margin-top: auto; }
+.tile-actions .btn:first-child { flex: 1; }
+
+/* Table */
+.table-card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; min-width: 0; }
+.tbar { display: flex; align-items: center; gap: 10px 12px; flex-wrap: wrap; padding: 14px 16px; border-bottom: 1px solid var(--line); }
+.tbar h2 { font-size: 16px; font-weight: 700; margin-right: 4px; }
+.seg { display: inline-flex; background: var(--sunken); border-radius: 8px; padding: 3px; }
+.seg button { border: 0; background: none; color: var(--muted); font: 600 12.5px var(--ui); padding: 5px 12px; border-radius: 6px; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,.18); }
+.tbar select { width: auto; height: 34px; }
+.search { position: relative; margin-left: auto; width: min(100%, 280px); }
+.search .ic { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--muted); }
+.search input { width: 100%; height: 34px; padding-left: 32px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); border-radius: 8px; font: 500 13px var(--ui); }
+.scroll { overflow: auto; max-height: 560px; }
+table { width: 100%; min-width: 760px; border-collapse: collapse; }
+th { position: sticky; top: 0; z-index: 1; background: var(--sunken); text-align: left; font: 600 11px var(--ui); text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); padding: 9px 14px; white-space: nowrap; }
+td { padding: 9px 14px; border-top: 1px solid var(--line); vertical-align: middle; font-size: 13px; }
+tr.is-opened td:not(.act) { color: var(--muted); }
+.num { font: 400 12px var(--mono); color: var(--muted); font-variant-numeric: tabular-nums; width: 56px; }
+.col-title { max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+.col-url { max-width: 360px; }
+.col-url a { color: var(--accent); font: 400 12px var(--mono); text-decoration: none; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.col-url a:hover { text-decoration: underline; }
+.pill { display: inline-flex; align-items: center; gap: 6px; border-radius: 999px; padding: 3px 10px; font: 600 12px var(--ui); border: 1px solid var(--line); background: var(--bg); color: var(--muted); cursor: pointer; }
+.pill.opened { background: var(--ok-soft); border-color: transparent; color: var(--ok); }
+.pill .ic { width: 13px; height: 13px; }
+.bt { display: inline-block; font: 500 12px var(--mono); background: var(--sunken); border-radius: 5px; padding: 1px 7px; color: var(--muted); }
+.act { text-align: right; white-space: nowrap; width: 120px; }
+.act .btn { margin-left: 2px; }
+.more { display: flex; justify-content: center; padding: 12px; border-top: 1px solid var(--line); }
+.none { text-align: center; color: var(--muted); padding: 40px 16px; }
+
+/* Paste dialog and toast */
+.overlay { position: fixed; inset: 0; z-index: 50; background: rgba(8, 12, 16, .55); display: flex; align-items: center; justify-content: center; padding: 16px; }
+.dialog { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; width: min(560px, 100%); padding: 20px; display: flex; flex-direction: column; gap: 14px; }
+.dialog h2 { font-size: 17px; font-weight: 700; }
+.dialog textarea { font: 400 12.5px var(--mono); resize: vertical; min-height: 180px; }
+.dialog-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.dialog-foot .btns { display: flex; gap: 8px; }
+#toasts { position: fixed; z-index: 60; right: max(16px, env(safe-area-inset-right, 0px)); bottom: calc(16px + env(safe-area-inset-bottom, 0px)); display: flex; flex-direction: column; gap: 8px; width: min(360px, calc(100vw - 32px)); pointer-events: none; }
+.toast { pointer-events: auto; background: var(--ink); color: var(--surface); border-radius: 10px; padding: 10px 14px; font-size: 13px; font-weight: 500; display: flex; gap: 10px; align-items: flex-start; box-shadow: 0 6px 24px rgba(0,0,0,.25); animation: tin .2s ease; }
+.toast.ok .ic { color: var(--ok); }
+.toast.warn .ic { color: var(--warn); }
+@keyframes tin { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+@media (max-width: 860px) {
+  .deck { grid-template-columns: minmax(0, 1fr); }
+  .cfg { grid-template-columns: minmax(0, 1fr); }
+  .search { margin-left: 0; width: 100%; }
+}
+@media (max-width: 520px) {
+  .big { font-size: 48px; }
+  .top-actions .lbl { display: none; }
+  .top-actions .btn:not(.icon) { padding: 0 11px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; animation: none !important; }
+}
+
+/* Views and Link Maker */
+.views { display: flex; gap: 4px; border-bottom: 1px solid var(--line); overflow-x: auto; }
+.vt { border: 0; background: none; color: var(--muted); font: 600 14px var(--ui); padding: 10px 14px; border-bottom: 2px solid transparent; margin-bottom: -1px; cursor: pointer; white-space: nowrap; }
+.vt:hover { color: var(--ink); }
+.vt[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--accent); }
+.view { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
+.mk-file { font: 400 12.5px var(--mono); color: var(--muted); overflow-wrap: anywhere; }
+.mk-count { font-size: 20px; font-weight: 700; letter-spacing: -0.01em; line-height: 1.25; }
+.mk-sum { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.mk-actions { margin-left: auto; display: flex; gap: 8px; flex-wrap: wrap; }
+.mk-hint { padding: 10px 16px; border-bottom: 1px solid var(--line); }
+.mk-hint.ok { color: var(--ok); }
+.mk-hint.warn { color: var(--warn); }
+.mk-tabs { display: flex; gap: 4px; padding: 10px 14px 0; overflow-x: auto; border-bottom: 1px solid var(--line); }
+.mk-tab { font: 500 13px var(--ui); background: transparent; color: var(--muted); border: 1px solid transparent; border-bottom: 0; border-radius: 6px 6px 0 0; padding: 7px 12px; cursor: pointer; white-space: nowrap; display: inline-flex; gap: 8px; align-items: center; }
+.mk-tab[aria-selected="true"] { background: var(--bg); color: var(--ink); border-color: var(--line); font-weight: 700; margin-bottom: -1px; }
+.mk-tab .n { font: 500 11px var(--mono); color: var(--accent); }
+.mk-sheet { overflow: auto; max-height: 440px; background: var(--bg); }
+.mk-sheet table { min-width: 100%; width: auto; border-collapse: collapse; font-size: 13.5px; }
+.mk-sheet th, .mk-sheet td { border: 1px solid var(--line); padding: 5px 10px; text-align: left; max-width: 340px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; background: var(--surface); text-transform: none; letter-spacing: 0; font-weight: 400; font-size: 13.5px; color: var(--ink); }
+.mk-sheet thead th, .mk-sheet tbody th { background: var(--sunken); color: var(--muted); font: 500 11.5px var(--mono); text-align: center; position: sticky; z-index: 1; }
+.mk-sheet thead th { top: 0; }
+.mk-sheet tbody th { left: 0; min-width: 40px; }
+.mk-sheet thead th:first-child { left: 0; z-index: 2; }
+.mk-sheet td.lk { background: var(--accent-soft); }
+.mk-sheet td a { color: var(--accent); text-decoration: underline; text-underline-offset: 2px; }
+.mk-empty { padding: 28px; color: var(--muted); text-align: center; }
+.mk-cap { padding: 10px 16px; font-size: 12.5px; color: var(--muted); border-top: 1px solid var(--line); }
+@media (max-width: 520px) {
+  .mk-actions { width: 100%; }
+  .mk-actions .btn { flex: 1; }
+}
+
+/* Extract links */
+.ex-text { font: 400 12.5px var(--mono); resize: vertical; min-height: 170px; line-height: 1.55; }
+.ex-opts { display: flex; flex-wrap: wrap; gap: 8px 22px; }
+.ex-or { display: flex; align-items: center; gap: 12px; color: var(--muted); font-size: 12.5px; }
+.ex-or::before, .ex-or::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+.ex-ctx { max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+.ex-where { white-space: nowrap; }
+.ex-src { display: inline-block; font: 500 11px var(--mono); border-radius: 5px; padding: 1px 7px; background: var(--sunken); color: var(--muted); }
+.ex-src.link { background: var(--accent-soft); color: var(--accent); }
+.ex-busy { padding: 10px 16px; color: var(--muted); font-size: 13px; border-bottom: 1px solid var(--line); }
+.ex-note { padding: 10px 16px; border-bottom: 1px solid var(--line); font-size: 12.5px; color: var(--warn); background: var(--warn-soft); }
+</style>
+
+<div class="page">
+  <header class="top">
+    <div class="brand">
+      <svg class="mark" viewBox="0 0 36 36" aria-hidden="true">
+        <rect x="3" y="3" width="8" height="8" rx="2" class="on"/><rect x="14" y="3" width="8" height="8" rx="2" class="on"/><rect x="25" y="3" width="8" height="8" rx="2" class="on"/>
+        <rect x="3" y="14" width="8" height="8" rx="2" class="on"/><rect x="14" y="14" width="8" height="8" rx="2"/><rect x="25" y="14" width="8" height="8" rx="2"/>
+        <rect x="3" y="25" width="8" height="8" rx="2"/><rect x="14" y="25" width="8" height="8" rx="2"/><rect x="25" y="25" width="8" height="8" rx="2"/>
+      </svg>
+      <div>
+        <h1>LinkDesk</h1>
+        <p>Make spreadsheet links clickable, then open them in batches</p>
+      </div>
+    </div>
+    <div class="top-actions"><span class="top-actions" id="topTools">
+      <button class="btn" id="btnPaste" type="button"><span data-ic="paste"></span><span class="lbl">Paste links</span></button>
+      <button class="btn" id="btnReport" type="button"><span data-ic="copy"></span><span class="lbl">Copy report</span></button></span>
+      <button class="btn icon" id="btnTheme" type="button" aria-label="Switch light or dark theme"><span id="themeIc"></span></button>
+    </div>
+  </header>
+
+  <nav class="views" role="tablist" aria-label="Tools">
+    <button class="vt" type="button" role="tab" id="tab-maker" data-view="maker" aria-selected="false" aria-controls="view-maker">Make links</button>
+    <button class="vt" type="button" role="tab" id="tab-batch" data-view="batch" aria-selected="true" aria-controls="view-batch">Open in batches</button>
+    <button class="vt" type="button" role="tab" id="tab-extract" data-view="extract" aria-selected="false" aria-controls="view-extract">Extract links</button>
+  </nav>
+
+  <div class="view" id="view-batch" role="tabpanel" aria-labelledby="tab-batch">
+  <div class="deck">
+    <section class="card" aria-labelledby="h-load">
+      <div class="card-head">
+        <span class="step">1</span>
+        <h2 id="h-load">Load links</h2>
+        <span class="chip" id="srcChip" hidden></span>
+      </div>
+      <label class="drop" id="drop">
+        <input class="sr" type="file" id="fileInput" accept=".xlsx,.xls,.csv,.txt">
+        <span class="drop-ic" data-ic="upload"></span>
+        <strong>Drop a spreadsheet or browse</strong>
+        <small>.xlsx, .xls or .csv. Links are found in any column.</small>
+      </label>
+      <div class="cfg" id="cfg" hidden>
+        <div class="field"><label for="sheetSel">Worksheet</label><select id="sheetSel"></select></div>
+        <div class="field"><label for="urlSel">Link column</label><select id="urlSel"></select></div>
+        <div class="field"><label for="labelSel">Title column</label><select id="labelSel"></select></div>
+      </div>
+      <div class="src-foot">
+        <p class="src-line" id="srcLine"></p>
+        <button class="link" id="btnSample" type="button">Use sample list</button>
+      </div>
+    </section>
+
+    <section class="card" aria-labelledby="h-launch">
+      <div class="card-head">
+        <span class="step">2</span>
+        <h2 id="h-launch">Launch</h2>
+        <span class="chip" id="sizeChip"></span>
+      </div>
+      <div id="launchBody"></div>
+      <div class="settings">
+        <div class="stepper" role="group" aria-label="Links per batch">
+          <span class="lbl">Per batch</span>
+          <button class="btn sm icon" id="sizeDown" type="button" aria-label="Fewer links per batch"><span data-ic="minus"></span></button>
+          <input id="sizeInput" type="number" min="1" max="100" value="20" aria-label="Links per batch">
+          <button class="btn sm icon" id="sizeUp" type="button" aria-label="More links per batch"><span data-ic="plus"></span></button>
+        </div>
+        <div class="presets" id="presets"></div>
+        <label class="check"><input type="checkbox" id="chkHttps" checked><span>Add <code>https://</code></span></label>
+        <label class="check"><input type="checkbox" id="chkDedupe"><span>Remove duplicates</span></label>
+      </div>
+    </section>
+  </div>
+
+  <section class="manual" id="manual" hidden aria-live="polite"></section>
+
+  <section id="batchSec" hidden>
+    <div class="sec-head">
+      <h2>Batches</h2>
+      <p>Each square is one link. Filled squares have been opened.</p>
+    </div>
+    <div class="tiles" id="tiles" style="margin-top:12px"></div>
+  </section>
+
+  <section class="table-card" aria-labelledby="h-links">
+    <div class="tbar">
+      <h2 id="h-links">Links</h2>
+      <div class="seg" id="statusSeg" role="group" aria-label="Filter by status">
+        <button type="button" data-f="all" aria-pressed="true">All</button>
+        <button type="button" data-f="pending" aria-pressed="false">Pending</button>
+        <button type="button" data-f="opened" aria-pressed="false">Opened</button>
+      </div>
+      <select id="batchSel" aria-label="Filter by batch"></select>
+      <div class="search">
+        <span data-ic="search"></span>
+        <input id="searchInput" type="search" placeholder="Search title or link" aria-label="Search links">
+      </div>
+    </div>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>#</th><th>Batch</th><th>Title</th><th>Link</th><th>Status</th><th style="text-align:right">Actions</th></tr></thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+    <div class="more" id="moreWrap" hidden><button class="btn" id="btnMore" type="button">Show more</button></div>
+    <div class="tbar" style="border-top:1px solid var(--line);border-bottom:0;justify-content:space-between">
+      <span class="hint" id="tableNote"></span>
+      <span style="display:inline-flex;gap:14px">
+        <button class="link" id="btnResetAll" type="button">Reset status</button>
+        <button class="link danger" id="btnClear" type="button">Clear all</button>
+      </span>
+    </div>
+  </section>
+  </div>
+
+  <div class="view" id="view-maker" role="tabpanel" aria-labelledby="tab-maker" hidden>
+    <section class="card" aria-labelledby="h-mk">
+      <div class="card-head">
+        <span class="step">1</span>
+        <h2 id="h-mk">Choose your Excel file</h2>
+        <span class="chip" id="mChip" hidden></span>
+      </div>
+      <label class="drop" id="mDrop">
+        <input class="sr" type="file" id="mFile" accept=".xlsx,.xlsm,.xls,.csv,.ods">
+        <span class="drop-ic" data-ic="upload"></span>
+        <strong id="mDropTitle">Drop your Excel file or browse</strong>
+        <small>.xlsx, .xls or .csv. The file stays in your browser and is not uploaded anywhere.</small>
+      </label>
+      <label class="check"><input type="checkbox" id="mBare"><span>Also link bare domains such as <code>example.com</code></span></label>
+      <p class="hint">Only cells that contain nothing but the domain are linked this way. Cell colors and fonts are not carried over.</p>
+    </section>
+
+    <section class="table-card" aria-labelledby="h-mk2" aria-live="polite">
+      <div class="tbar">
+        <div class="mk-sum">
+          <h2 id="h-mk2" class="sr">Result</h2>
+          <div class="mk-file" id="mFileLine"></div>
+          <div class="mk-count" id="mCountLine"></div>
+        </div>
+        <div class="mk-actions">
+          <button class="btn" type="button" id="mSend" disabled><span data-ic="arrow"></span>Send to batches</button>
+          <button class="btn primary" type="button" id="mDl" disabled>Download clickable file</button>
+        </div>
+      </div>
+      <p class="hint mk-hint" id="mHint"></p>
+      <div class="mk-tabs" id="mTabs" role="tablist" aria-label="Sheets"></div>
+      <div class="mk-sheet" id="mSheet"></div>
+      <div class="mk-cap" id="mCap"></div>
+    </section>
+  </div>
+
+  <div class="view" id="view-extract" role="tabpanel" aria-labelledby="tab-extract" hidden>
+    <section class="card" aria-labelledby="h-ex">
+      <div class="card-head">
+        <span class="step">1</span>
+        <h2 id="h-ex">Paste text or add a document</h2>
+        <span class="chip" id="exChip" hidden></span>
+      </div>
+      <div class="field">
+        <label for="exText">Paste text from a syllabus, article, email or notes</label>
+        <textarea class="ex-text" id="exText" spellcheck="false"></textarea>
+      </div>
+      <div class="ex-or">or</div>
+      <label class="drop" id="exDrop">
+        <input class="sr" type="file" id="exFile" accept=".docx,.pdf,.txt,.md,.csv,.html,.htm">
+        <span class="drop-ic" data-ic="upload"></span>
+        <strong id="exDropTitle">Drop a Word or PDF file or browse</strong>
+        <small>.docx, .pdf, .txt, .md, .html. The file stays in your browser.</small>
+      </label>
+      <div class="ex-opts">
+        <label class="check"><input type="checkbox" id="exDedupe" checked><span>Remove duplicates</span></label>
+        <label class="check"><input type="checkbox" id="exRepair" checked><span>Join links split across lines</span></label>
+        <label class="check"><input type="checkbox" id="exBare"><span>Also find bare domains such as <code>example.com</code></span></label>
+      </div>
+    </section>
+
+    <section class="table-card" aria-labelledby="h-ex2" aria-live="polite">
+      <div class="tbar">
+        <div class="mk-sum">
+          <h2 id="h-ex2" class="sr">Found links</h2>
+          <div class="mk-file" id="exFileLine"></div>
+          <div class="mk-count" id="exCount"></div>
+        </div>
+        <div class="mk-actions">
+          <button class="btn" type="button" id="exCopy" disabled><span data-ic="copy"></span>Copy links</button>
+          <button class="btn" type="button" id="exXlsx" disabled>Download .xlsx</button>
+          <button class="btn primary" type="button" id="exSend" disabled><span data-ic="arrow"></span>Send to batches</button>
+        </div>
+      </div>
+      <div id="exBusy" class="ex-busy" hidden></div>
+      <div id="exNote" class="ex-note" hidden></div>
+      <div class="scroll">
+        <table>
+          <thead><tr><th>#</th><th>Found in</th><th>Title</th><th>Link</th><th>Type</th><th style="text-align:right">Remove</th></tr></thead>
+          <tbody id="exRows"></tbody>
+        </table>
+      </div>
+      <div class="more" id="exMoreWrap" hidden><button class="btn" id="exMore" type="button">Show more</button></div>
+      <div class="mk-cap" id="exCap"></div>
+    </section>
+  </div>
+</div>
+
+<div class="overlay" id="pasteOv" hidden>
+  <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="h-paste">
+    <h2 id="h-paste">Paste links</h2>
+    <p class="hint">Copy a column from Excel, Numbers or Google Sheets and paste it here, one link per line. A title in the same row is kept.</p>
+    <textarea id="pasteTa" placeholder="https://example.com/page-1&#10;https://example.com/page-2&#10;anthropic.com"></textarea>
+    <div class="dialog-foot">
+      <label class="check"><input type="checkbox" id="chkAppend"><span>Add to current list</span></label>
+      <div class="btns">
+        <button class="btn" id="pasteCancel" type="button">Cancel</button>
+        <button class="btn primary" id="pasteGo" type="button">Import links</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toasts" aria-live="polite"></div>
+
+<script>var LD = {};</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  var $ = function (id) { return document.getElementById(id); };
+  var KEY = 'bulklink_state_v2';
+  var THEME = 'bulklink_theme';
+
+  var LS = {
+    get: function (k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+    set: function (k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+  };
+
+  /* ---------- icons ---------- */
+  var ICON = {
+    ext: '<path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/>',
+    copy: '<rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/>',
+    check: '<path d="m5 12.5 4.5 4.5L19 7.5"/>',
+    clock: '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>',
+    trash: '<path d="M5 7h14M10 7V4h4v3M7 7l1 13h8l1-13"/>',
+    undo: '<path d="M9 14 4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/>',
+    moon: '<path d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5z"/>',
+    sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5 19 19M5 19l1.5-1.5M17.5 6.5 19 5"/>',
+    paste: '<rect x="6" y="5" width="12" height="16" rx="2"/><path d="M9 5V4h6v1M9 11h6M9 15h6"/>',
+    plus: '<path d="M12 5v14M5 12h14"/>',
+    minus: '<path d="M5 12h14"/>',
+    search: '<circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/>',
+    upload: '<path d="M12 16V4M7 9l5-5 5 5M5 20h14"/>',
+    warn: '<path d="M12 4 3 20h18L12 4zM12 10v4M12 17v.5"/>',
+    arrow: '<path d="M5 12h14M13 6l6 6-6 6"/>'
+  };
+  function ic(name, cls) {
+    return '<svg class="ic ' + (cls || '') + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + ICON[name] + '</svg>';
+  }
+  function hydrateIcons() {
+    document.querySelectorAll('[data-ic]').forEach(function (el) { el.innerHTML = ic(el.getAttribute('data-ic')); });
+  }
+
+  /* ---------- state ---------- */
+  var S = {
+    raw: [], items: [], size: 20, auto: true, dedupe: false,
+    source: null, status: 'all', batchFilter: 'all', limit: 150,
+    manual: [], clearArmed: false, query: ''
+  };
+  var WB = null;
+
+  function save() {
+    LS.set(KEY, JSON.stringify({ raw: S.raw, items: S.items, size: S.size, auto: S.auto, dedupe: S.dedupe, source: S.source }));
+  }
+  function load() {
+    var raw = LS.get(KEY);
+    if (!raw) return false;
+    try {
+      var p = JSON.parse(raw);
+      if (!p || !Array.isArray(p.items)) return false;
+      S.raw = Array.isArray(p.raw) ? p.raw : [];
+      S.items = p.items;
+      S.size = Math.min(100, Math.max(1, parseInt(p.size, 10) || 20));
+      S.auto = p.auto !== false;
+      S.dedupe = !!p.dedupe;
+      S.source = p.source || null;
+      return true;
+    } catch (e) { return false; }
+  }
+
+  /* ---------- helpers ---------- */
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+  function nowStr() { return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); }
+  function host(u) { try { return new URL(u).hostname.replace(/^www\./, ''); } catch (e) { return u; } }
+  function nBatches() { return Math.ceil(S.items.length / S.size); }
+  function batchStart(b) { return (b - 1) * S.size; }
+  function batchItems(b) { return S.items.slice(batchStart(b), batchStart(b) + S.size); }
+  function nextBatch() {
+    for (var b = 1; b <= nBatches(); b++) if (batchItems(b).some(function (i) { return !i.opened; })) return b;
+    return 0;
+  }
+  function plural(n, w) { return n + ' ' + w + (n === 1 ? '' : 's'); }
+
+  function toast(msg, type) {
+    var t = document.createElement('div');
+    t.className = 'toast ' + (type || '');
+    t.innerHTML = ic(type === 'warn' ? 'warn' : 'check') + '<span>' + esc(msg) + '</span>';
+    $('toasts').appendChild(t);
+    setTimeout(function () { t.style.opacity = '0'; t.style.transition = 'opacity .25s'; setTimeout(function () { t.remove(); }, 260); }, 3800);
+  }
+
+  function copyText(text, okMsg) {
+    function fallback() {
+      var ta = document.createElement('textarea');
+      ta.value = text; ta.setAttribute('readonly', '');
+      ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0';
+      document.body.appendChild(ta); ta.select();
+      var ok = false;
+      try { ok = document.execCommand('copy'); } catch (e) {}
+      ta.remove();
+      toast(ok ? okMsg : 'Copy was blocked by the browser. Select the text and copy it by hand.', ok ? 'ok' : 'warn');
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function () { toast(okMsg, 'ok'); }, fallback);
+    } else { fallback(); }
+  }
+
+  /* ---------- URL detection ---------- */
+  function looksLikeUrl(str) {
+    if (!str || typeof str !== 'string') return false;
+    var s = str.trim();
+    if (s.length < 4 || /\s/.test(s)) return false;
+    if (/^(url|urls|link|links|website|websites|href|address)$/i.test(s)) return false;
+    if (/^https?:\/\//i.test(s)) return true;
+    if (/^www\.[a-z0-9-]+(\.[a-z]{2,})+/i.test(s)) return true;
+    return /^[a-z0-9-]+(\.[a-z0-9-]+)*\.[a-z]{2,10}(\/.*)?$/i.test(s);
+  }
+  function normalizeUrl(u, auto) {
+    var s = String(u || '').trim();
+    if (!s) return '';
+    if (!/^https?:\/\//i.test(s) && auto) s = 'https://' + s;
+    return /^https?:\/\/\S+$/i.test(s) ? s : '';
+  }
+
+  /* ---------- building the link list ---------- */
+  function applyRaw(raw, keep) {
+    var prev = {};
+    if (keep) S.items.forEach(function (i) { if (i.opened) prev[i.url.toLowerCase()] = i.at || ''; });
+    var seen = {}, out = [], skipped = 0;
+    raw.forEach(function (r, idx) {
+      var url = normalizeUrl(r.url, S.auto);
+      if (!url) { skipped++; return; }
+      var key = url.toLowerCase();
+      if (S.dedupe && seen[key]) return;
+      seen[key] = true;
+      var was = Object.prototype.hasOwnProperty.call(prev, key);
+      out.push({ url: url, label: r.label || ('Row ' + (r.row || idx + 1)), opened: was, at: was ? prev[key] : null });
+    });
+    S.raw = raw; S.items = out; S.batchFilter = 'all'; S.limit = 150; S.manual = [];
+    save(); renderAll();
+    return skipped;
+  }
+
+  /* ---------- spreadsheet reading ---------- */
+  function sheetRows(ws) {
+    return XLSX.utils.sheet_to_json(ws, { header: 1, defval: '', blankrows: true });
+  }
+  function readFile(file) {
+    if (typeof XLSX === 'undefined') { toast('The spreadsheet reader did not load. Use Paste links instead.', 'warn'); return; }
+    var r = new FileReader();
+    r.onload = function (e) {
+      try {
+        WB = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
+        var sel = $('sheetSel');
+        sel.innerHTML = WB.SheetNames.map(function (n) { return '<option value="' + esc(n) + '">' + esc(n) + '</option>'; }).join('');
+        S.source = { name: file.name, sample: false };
+        $('cfg').hidden = false;
+        onSheetChange();
+      } catch (err) {
+        toast('That file could not be read. Use a valid .xlsx, .xls or .csv file.', 'warn');
+      }
+    };
+    r.readAsArrayBuffer(file);
+  }
+  function onSheetChange() {
+    if (!WB) return;
+    var ws = WB.Sheets[$('sheetSel').value];
+    var rows = sheetRows(ws);
+    if (!rows.length) { toast('That worksheet is empty.', 'warn'); return; }
+    var maxCols = 0;
+    rows.forEach(function (r) { if (r.length > maxCols) maxCols = r.length; });
+    var first = rows[0] || [];
+    var urlOpts = '<option value="auto">Find links in every column</option>';
+    var labelOpts = '<option value="none">First text column</option>';
+    var best = -1, bestCount = 0;
+    for (var c = 0; c < maxCols; c++) {
+      var head = String(first[c] || '').trim();
+      var name = 'Column ' + XLSX.utils.encode_col(c) + (head ? ': ' + head.slice(0, 26) : '');
+      var count = 0;
+      for (var r = 0; r < Math.min(rows.length, 50); r++) if (looksLikeUrl(String((rows[r] && rows[r][c]) || '').trim())) count++;
+      if (count > bestCount) { bestCount = count; best = c; }
+      urlOpts += '<option value="' + c + '">' + esc(name) + '</option>';
+      labelOpts += '<option value="' + c + '">' + esc(name) + '</option>';
+    }
+    $('urlSel').innerHTML = urlOpts;
+    $('labelSel').innerHTML = labelOpts;
+    $('urlSel').value = (best !== -1 && bestCount >= 2) ? String(best) : 'auto';
+    extract();
+  }
+  function cellLink(ws, range, r, c) {
+    if (!range) return '';
+    var obj = ws[XLSX.utils.encode_cell({ r: range.s.r + r, c: range.s.c + c })];
+    if (obj && obj.l && obj.l.Target) {
+      var t = String(obj.l.Target).trim();
+      if (/^https?:\/\//i.test(t) || looksLikeUrl(t)) return t;
+    }
+    return '';
+  }
+  function bestLabel(row, urlCol, labelChoice, r) {
+    if (labelChoice !== 'none') {
+      var v = String(row[parseInt(labelChoice, 10)] || '').trim();
+      if (v) return v;
+    }
+    for (var i = 0; i < row.length; i++) {
+      if (i === urlCol) continue;
+      var s = String(row[i] || '').trim();
+      if (s && !looksLikeUrl(s)) return s;
+    }
+    return 'Row ' + (r + 1);
+  }
+  function extract() {
+    if (!WB) return;
+    var ws = WB.Sheets[$('sheetSel').value];
+    var rows = sheetRows(ws);
+    var range = ws['!ref'] ? XLSX.utils.decode_range(ws['!ref']) : null;
+    var urlChoice = $('urlSel').value, labelChoice = $('labelSel').value;
+    var out = [];
+    rows.forEach(function (row, r) {
+      if (!row || !row.length) return;
+      function take(c) {
+        var url = cellLink(ws, range, r, c);
+        var text = String(row[c] || '').trim();
+        if (!url && looksLikeUrl(text)) url = text;
+        if (url) out.push({ url: url, label: bestLabel(row, c, labelChoice, r), row: r + 1 });
+      }
+      if (urlChoice === 'auto') row.forEach(function (_, c) { take(c); });
+      else take(parseInt(urlChoice, 10));
+    });
+    var skipped = applyRaw(out, false);
+    if (S.items.length) toast('Found ' + plural(S.items.length, 'link') + ' in ' + plural(nBatches(), 'batch') + ' of ' + S.size + '.', 'ok');
+    else toast('No links found. Try a different link column.', 'warn');
+    if (skipped) toast(plural(skipped, 'row') + ' skipped because the link had no http or https prefix.', 'warn');
+  }
+
+  /* ---------- sample and paste ---------- */
+  function loadSample() {
+    var base = [
+      ['Google Search', 'https://www.google.com'], ['Wikipedia', 'https://en.wikipedia.org'], ['GitHub Explore', 'https://github.com/explore'],
+      ['Stack Overflow', 'https://stackoverflow.com/questions'], ['MDN Web Docs', 'https://developer.mozilla.org'], ['Hacker News', 'https://news.ycombinator.com'],
+      ['Product Hunt', 'https://www.producthunt.com'], ['Tailwind CSS Docs', 'https://tailwindcss.com/docs'], ['SheetJS', 'https://sheetjs.com'],
+      ['npm Registry', 'https://www.npmjs.com'], ['Cloudflare Radar', 'https://radar.cloudflare.com'], ['Internet Archive', 'https://archive.org'],
+      ['W3C', 'https://www.w3.org'], ['Python Docs', 'https://docs.python.org/3/'], ['Rust Language', 'https://www.rust-lang.org'],
+      ['Go Dev', 'https://go.dev'], ['TypeScript Handbook', 'https://www.typescriptlang.org/docs/'], ['React Docs', 'https://react.dev'],
+      ['Vue Guide', 'https://vuejs.org/guide/introduction.html'], ['Svelte', 'https://svelte.dev']
+    ];
+    var raw = [];
+    for (var i = 1; i <= 45; i++) {
+      var b = base[(i - 1) % base.length];
+      raw.push({ label: b[0] + ' (row ' + i + ')', url: b[1] + (b[1].indexOf('?') === -1 ? '?' : '&') + 'item=' + i, row: i });
+    }
+    WB = null; $('cfg').hidden = true;
+    S.source = { name: 'Sample list', sample: true };
+    applyRaw(raw, false);
+  }
+  function importPasted() {
+    var lines = $('pasteTa').value.split(/\r?\n/);
+    var add = [];
+    lines.forEach(function (line, idx) {
+      var parts = line.split('\t').map(function (s) { return s.trim(); }).filter(Boolean);
+      if (!parts.length) return;
+      var url = '', label = '';
+      parts.forEach(function (p) {
+        if (!url && looksLikeUrl(p)) url = p; else if (!label) label = p;
+      });
+      if (url) add.push({ url: url, label: label || ('Pasted row ' + (idx + 1)), row: idx + 1 });
+    });
+    if (!add.length) { toast('No links found in the pasted text.', 'warn'); return; }
+    var append = $('chkAppend').checked && S.items.length && !(S.source && S.source.sample);
+    var raw = append ? S.raw.concat(add) : add;
+    WB = null; $('cfg').hidden = true;
+    S.source = { name: 'Pasted links', sample: false };
+    $('pasteTa').value = '';
+    closePaste();
+    applyRaw(raw, append);
+    toast('Imported ' + plural(add.length, 'link') + '.', 'ok');
+  }
+  function closePaste() { $('pasteOv').hidden = true; }
+  function openPaste() { $('pasteOv').hidden = false; $('pasteTa').focus(); }
+
+  /* ---------- launching ---------- */
+  function launch(indices, label) {
+    if (!indices.length) return;
+    var ok = 0, blocked = [];
+    for (var k = 0; k < indices.length; k++) {
+      var it = S.items[indices[k]];
+      var w = null;
+      try { w = window.open(it.url, '_blank'); } catch (e) { w = null; }
+      if (w) {
+        try { w.opener = null; } catch (e) {}
+        it.opened = true; it.at = nowStr(); ok++;
+      } else {
+        blocked = indices.slice(k);
+        break;
+      }
+    }
+    S.manual = blocked;
+    save(); renderAll();
+    if (blocked.length) {
+      toast(ok ? ('Opened ' + ok + '. The browser blocked the other ' + blocked.length + '.') : 'The browser blocked the new tabs. Use the list below.', 'warn');
+      var m = $('manual'); if (m && m.scrollIntoView) { try { m.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); } catch (e) {} }
+    } else {
+      toast(label + ': opened ' + plural(ok, 'tab') + '.', 'ok');
+    }
+  }
+  function pendingIndices(b) {
+    var start = batchStart(b), out = [];
+    batchItems(b).forEach(function (it, i) { if (!it.opened) out.push(start + i); });
+    if (!out.length) batchItems(b).forEach(function (_, i) { out.push(start + i); });
+    return out;
+  }
+  function openNext() {
+    var b = nextBatch();
+    if (!S.items.length) return;
+    if (!b) { toast('Every batch is open. Reset the status to start again.', 'ok'); return; }
+    launch(pendingIndices(b), 'Batch ' + b);
+  }
+  function markOpened(i) {
+    var it = S.items[i];
+    if (!it) return;
+    it.opened = true; it.at = nowStr();
+    S.manual = S.manual.filter(function (x) { return x !== i; });
+    save();
+    setTimeout(renderAll, 200);
+  }
+
+  /* ---------- rendering ---------- */
+  function renderAll() {
+    renderSource(); renderLaunch(); renderManual(); renderTiles(); renderBatchSel(); renderTable(); renderSettings();
+  }
+  function renderSource() {
+    var chip = $('srcChip');
+    if (S.source) {
+      chip.hidden = false;
+      chip.textContent = S.source.sample ? 'Sample data' : S.source.name;
+      chip.className = 'chip' + (S.source.sample ? ' sample' : '');
+    } else { chip.hidden = true; }
+    $('srcLine').innerHTML = S.items.length
+      ? '<b>' + S.items.length + '</b> links in <b>' + nBatches() + '</b> ' + (nBatches() === 1 ? 'batch' : 'batches')
+      : 'No links loaded yet.';
+  }
+  function renderSettings() {
+    $('sizeInput').value = S.size;
+    $('sizeChip').textContent = S.size + ' per batch';
+    $('chkHttps').checked = S.auto;
+    $('chkDedupe').checked = S.dedupe;
+    $('presets').innerHTML = [10, 20, 30, 50].map(function (n) {
+      return '<button type="button" data-size="' + n + '" aria-pressed="' + (S.size === n) + '">' + n + '</button>';
+    }).join('');
+  }
+  function renderLaunch() {
+    var total = S.items.length;
+    var opened = S.items.filter(function (i) { return i.opened; }).length;
+    var pct = total ? Math.round(opened / total * 100) : 0;
+    var nb = nextBatch();
+    var html = '';
+    if (!total) {
+      html = '<p class="empty">Load a spreadsheet, paste links, or use the sample list to get started.</p>';
+    } else if (!nb) {
+      html = '<div class="next"><span class="done-mark">' + ic('check') + 'All ' + total + ' links opened</span>' +
+        '<p class="hint">Reset the status to run through the list again.</p></div>' +
+        '<button class="btn lg" type="button" data-act="reset-all">' + ic('undo') + 'Start over</button>';
+    } else {
+      var sl = batchItems(nb);
+      var pend = sl.filter(function (i) { return !i.opened; });
+      var s = batchStart(nb) + 1, e = batchStart(nb) + sl.length;
+      var seen = [], hosts = [];
+      pend.forEach(function (i) { var h = host(i.url); if (seen.indexOf(h) === -1) { seen.push(h); hosts.push(h); } });
+      var hostLine = hosts.slice(0, 4).join(', ') + (hosts.length > 4 ? ' and ' + (hosts.length - 4) + ' more' : '');
+      html = '<div class="next"><span class="eyebrow">Next up</span>' +
+        '<div class="big-row"><span class="big">Batch ' + nb + '</span><span class="big-sub">of ' + nBatches() + ' &middot; links ' + s + ' to ' + e + '</span></div>' +
+        '<p class="hosts">' + esc(hostLine) + '</p></div>' +
+        '<button class="btn primary lg" type="button" data-act="launch-next">' + ic('ext') + 'Open ' + plural(pend.length, 'tab') + '</button>' +
+        '<p class="hint">Shortcut <kbd>Alt</kbd> + <kbd>O</kbd>. Allow pop-ups for this page if only one tab opens.</p>';
+    }
+    if (total) {
+      html += '<div class="progress"><div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + pct + '"><i style="width:' + pct + '%"></i></div>' +
+        '<div class="stats"><span><b>' + opened + '</b> opened</span><span><b>' + (total - opened) + '</b> left</span><span><b>' + pct + '%</b> done</span></div></div>';
+    }
+    $('launchBody').innerHTML = '<div style="display:flex;flex-direction:column;gap:16px">' + html + '</div>';
+  }
+  function renderManual() {
+    var el = $('manual');
+    if (!S.manual.length) { S.manualTotal = 0; el.hidden = true; el.innerHTML = ''; return; }
+    if (!S.manualTotal || S.manual.length > S.manualTotal) S.manualTotal = S.manual.length;
+    var cur = S.items[S.manual[0]], done = S.manualTotal - S.manual.length;
+    var pct = Math.round(done / S.manualTotal * 100);
+    el.hidden = false;
+    el.innerHTML = '<div class="m-head"><h2>One link per click</h2><span class="tile-count">' + done + ' of ' + S.manualTotal + ' opened</span></div>' +
+      '<div class="bar"><i style="width:' + pct + '%"></i></div>' +
+      '<p>New tabs are blocked in this view, so a batch opens one link at a time. Press the button, then come back for the next one. For all tabs at once, use the downloaded file in your own browser.</p>' +
+      '<div class="m-cur"><span class="eyebrow">Next link</span><span class="t">' + esc(cur.label) + '</span><span class="u">' + esc(cur.url) + '</span>' +
+      '<a class="btn primary lg" href="' + esc(cur.url) + '" target="_blank" rel="noopener noreferrer" data-manual="' + S.manual[0] + '">' + ic('ext') + 'Open this link</a></div>' +
+      '<div class="manual-actions"><button class="btn sm" type="button" data-act="manual-skip">Skip</button>' +
+      '<button class="btn sm" type="button" data-act="manual-copy">' + ic('copy') + 'Copy remaining</button>' +
+      '<button class="btn sm" type="button" data-act="manual-dismiss">Close</button></div>' +
+      '<details><summary>Show all ' + S.manual.length + ' remaining</summary><ul class="manual-list">' + S.manual.map(function (i) {
+        var it = S.items[i];
+        return '<li><a href="' + esc(it.url) + '" target="_blank" rel="noopener noreferrer" data-manual="' + i + '">' + esc(it.url) + '</a></li>';
+      }).join('') + '</ul></details>';
+  }
+  function renderTiles() {
+    var sec = $('batchSec');
+    if (!S.items.length) { sec.hidden = true; return; }
+    sec.hidden = false;
+    var nb = nextBatch(), html = '';
+    for (var b = 1; b <= nBatches(); b++) {
+      var sl = batchItems(b), done = sl.filter(function (i) { return i.opened; }).length;
+      var finished = done === sl.length, isNext = b === nb;
+      var left = sl.length - done;
+      html += '<article class="tile ' + (finished ? 'finished' : isNext ? 'next-up' : '') + '">' +
+        '<div class="tile-top"><span class="tile-n">Batch ' + b + '</span>' +
+        (finished ? '<span class="tile-flag">Done</span>' : isNext ? '<span class="tile-flag">Next</span>' : '') + '</div>' +
+        '<div class="tile-top"><span class="range">Links ' + (batchStart(b) + 1) + ' to ' + (batchStart(b) + sl.length) + '</span><span class="tile-count">' + done + '/' + sl.length + '</span></div>' +
+        '<div class="dots" aria-hidden="true">' + sl.map(function (i) { return '<i class="' + (i.opened ? 'on' : '') + '"></i>'; }).join('') + '</div>' +
+        '<div class="tile-actions">' +
+        '<button class="btn sm' + (isNext ? ' primary' : '') + '" type="button" data-act="launch-batch" data-b="' + b + '">' + (finished ? 'Open again' : 'Open ' + plural(left, 'tab')) + '</button>' +
+        '<button class="btn sm icon" type="button" data-act="copy-batch" data-b="' + b + '" aria-label="Copy links in batch ' + b + '" title="Copy links">' + ic('copy') + '</button>' +
+        (done ? '<button class="btn sm icon" type="button" data-act="reset-batch" data-b="' + b + '" aria-label="Mark batch ' + b + ' as unopened" title="Mark as unopened">' + ic('undo') + '</button>' : '') +
+        '</div></article>';
+    }
+    $('tiles').innerHTML = html;
+  }
+  function renderBatchSel() {
+    var sel = $('batchSel'), n = nBatches();
+    var html = '<option value="all">All batches</option>';
+    for (var b = 1; b <= n; b++) html += '<option value="' + b + '">Batch ' + b + ' (' + (batchStart(b) + 1) + ' to ' + Math.min(b * S.size, S.items.length) + ')</option>';
+    sel.innerHTML = html;
+    if (S.batchFilter !== 'all' && parseInt(S.batchFilter, 10) > n) S.batchFilter = 'all';
+    sel.value = String(S.batchFilter);
+  }
+  function renderTable() {
+    var body = $('rows');
+    document.querySelectorAll('#statusSeg button').forEach(function (b) { b.setAttribute('aria-pressed', String(b.getAttribute('data-f') === S.status)); });
+    if (!S.items.length) {
+      body.innerHTML = '<tr><td colspan="6" class="none">No links loaded.</td></tr>';
+      $('moreWrap').hidden = true; $('tableNote').textContent = ''; return;
+    }
+    var q = S.query.trim().toLowerCase(), shown = 0, matched = 0, html = '';
+    S.items.forEach(function (it, idx) {
+      var b = Math.floor(idx / S.size) + 1;
+      if (S.status === 'pending' && it.opened) return;
+      if (S.status === 'opened' && !it.opened) return;
+      if (S.batchFilter !== 'all' && String(b) !== String(S.batchFilter)) return;
+      if (q && it.url.toLowerCase().indexOf(q) === -1 && String(it.label).toLowerCase().indexOf(q) === -1) return;
+      matched++;
+      if (shown >= S.limit) return;
+      shown++;
+      html += '<tr class="' + (it.opened ? 'is-opened' : '') + '">' +
+        '<td class="num">' + (idx + 1) + '</td>' +
+        '<td><span class="bt">B' + b + '</span></td>' +
+        '<td class="col-title" title="' + esc(it.label) + '">' + esc(it.label) + '</td>' +
+        '<td class="col-url"><a href="' + esc(it.url) + '" target="_blank" rel="noopener noreferrer" data-manual="' + idx + '" title="' + esc(it.url) + '">' + esc(it.url) + '</a></td>' +
+        '<td><button type="button" class="pill ' + (it.opened ? 'opened' : '') + '" data-act="row-toggle" data-i="' + idx + '" aria-label="Toggle status">' +
+        ic(it.opened ? 'check' : 'clock') + (it.opened ? 'Opened' + (it.at ? ' ' + esc(it.at) : '') : 'Pending') + '</button></td>' +
+        '<td class="act"><button class="btn sm icon" type="button" data-act="row-copy" data-i="' + idx + '" aria-label="Copy link" title="Copy link">' + ic('copy') + '</button>' +
+        '<button class="btn sm icon" type="button" data-act="row-remove" data-i="' + idx + '" aria-label="Remove link" title="Remove">' + ic('trash') + '</button></td></tr>';
+    });
+    body.innerHTML = html || '<tr><td colspan="6" class="none">No links match this filter.</td></tr>';
+    $('moreWrap').hidden = matched <= shown;
+    $('btnMore').textContent = 'Show ' + Math.min(150, matched - shown) + ' more';
+    $('tableNote').textContent = 'Showing ' + shown + ' of ' + matched + (matched === 1 ? ' link' : ' links');
+    $('btnClear').textContent = S.clearArmed ? 'Click again to clear everything' : 'Clear all';
+  }
+
+  /* ---------- actions ---------- */
+  function report() {
+    var lines = [['#', 'Batch', 'Title', 'URL', 'Status', 'Opened at'].join('\t')];
+    S.items.forEach(function (it, i) {
+      lines.push([i + 1, 'Batch ' + (Math.floor(i / S.size) + 1), String(it.label).replace(/\t/g, ' '), it.url, it.opened ? 'Opened' : 'Pending', it.at || ''].join('\t'));
+    });
+    return lines.join('\n');
+  }
+  function resetAll() {
+    S.items.forEach(function (i) { i.opened = false; i.at = null; });
+    S.manual = []; save(); renderAll(); toast('All links are pending again.', 'ok');
+  }
+  function setSize(v) {
+    var n = parseInt(v, 10);
+    if (isNaN(n) || n < 1) n = 20;
+    S.size = Math.min(100, n);
+    S.manual = []; S.batchFilter = 'all';
+    save(); renderAll();
+  }
+
+  document.addEventListener('click', function (e) {
+    var man = e.target.closest && e.target.closest('a[data-manual]');
+    if (man) { markOpened(parseInt(man.getAttribute('data-manual'), 10)); return; }
+    var btn = e.target.closest && e.target.closest('[data-act]');
+    if (btn) {
+      var act = btn.getAttribute('data-act');
+      var b = parseInt(btn.getAttribute('data-b'), 10);
+      var i = parseInt(btn.getAttribute('data-i'), 10);
+      if (act === 'launch-next') openNext();
+      else if (act === 'launch-batch') launch(pendingIndices(b), 'Batch ' + b);
+      else if (act === 'copy-batch') copyText(batchItems(b).map(function (x) { return x.url; }).join('\n'), 'Copied the links in batch ' + b + '.');
+      else if (act === 'reset-batch') {
+        batchItems(b).forEach(function (x) { x.opened = false; x.at = null; });
+        save(); renderAll(); toast('Batch ' + b + ' is pending again.', 'ok');
+      }
+      else if (act === 'reset-all') resetAll();
+      else if (act === 'row-toggle') { var it = S.items[i]; it.opened = !it.opened; it.at = it.opened ? nowStr() : null; save(); renderAll(); }
+      else if (act === 'row-copy') copyText(S.items[i].url, 'Copied the link.');
+      else if (act === 'row-remove') { S.items.splice(i, 1); S.manual = []; save(); renderAll(); }
+      else if (act === 'manual-copy') copyText(S.manual.map(function (x) { return S.items[x].url; }).join('\n'), 'Copied ' + plural(S.manual.length, 'link') + '.');
+      else if (act === 'manual-skip') { S.manual.push(S.manual.shift()); renderManual(); }
+      else if (act === 'manual-dismiss') { S.manual = []; renderManual(); }
+      return;
+    }
+    var preset = e.target.closest && e.target.closest('[data-size]');
+    if (preset) setSize(preset.getAttribute('data-size'));
+    var f = e.target.closest && e.target.closest('#statusSeg button');
+    if (f) { S.status = f.getAttribute('data-f'); S.limit = 150; renderTable(); }
+  });
+
+  /* ---------- wiring ---------- */
+  function effectiveDark() {
+    var t = document.documentElement.getAttribute('data-theme');
+    if (t) return t === 'dark';
+    return !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  }
+  function paintThemeIcon() { $('themeIc').innerHTML = ic(effectiveDark() ? 'sun' : 'moon'); }
+
+  function init() {
+    hydrateIcons();
+    var t = LS.get(THEME);
+    if (t === 'dark' || t === 'light') document.documentElement.setAttribute('data-theme', t);
+    paintThemeIcon();
+
+    $('btnTheme').addEventListener('click', function () {
+      var next = effectiveDark() ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', next);
+      LS.set(THEME, next); paintThemeIcon();
+    });
+    $('btnPaste').addEventListener('click', openPaste);
+    $('pasteCancel').addEventListener('click', closePaste);
+    $('pasteGo').addEventListener('click', importPasted);
+    $('pasteOv').addEventListener('click', function (e) { if (e.target === $('pasteOv')) closePaste(); });
+    $('btnReport').addEventListener('click', function () {
+      if (!S.items.length) { toast('Load some links first.', 'warn'); return; }
+      copyText(report(), 'Copied the status report. Paste it into Excel or Sheets.');
+    });
+    $('btnSample').addEventListener('click', loadSample);
+    $('fileInput').addEventListener('change', function (e) { var f = e.target.files && e.target.files[0]; if (f) readFile(f); e.target.value = ''; });
+    ['dragenter', 'dragover'].forEach(function (n) { $('drop').addEventListener(n, function (e) { e.preventDefault(); $('drop').classList.add('over'); }); });
+    ['dragleave', 'drop'].forEach(function (n) { $('drop').addEventListener(n, function (e) { e.preventDefault(); $('drop').classList.remove('over'); }); });
+    $('drop').addEventListener('drop', function (e) { var f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]; if (f) readFile(f); });
+    $('sheetSel').addEventListener('change', onSheetChange);
+    $('urlSel').addEventListener('change', extract);
+    $('labelSel').addEventListener('change', extract);
+    $('sizeDown').addEventListener('click', function () { setSize(Math.max(1, S.size - 1)); });
+    $('sizeUp').addEventListener('click', function () { setSize(Math.min(100, S.size + 1)); });
+    $('sizeInput').addEventListener('change', function (e) { setSize(e.target.value); });
+    $('chkHttps').addEventListener('change', function (e) { S.auto = e.target.checked; applyRaw(S.raw, true); });
+    $('chkDedupe').addEventListener('change', function (e) { S.dedupe = e.target.checked; applyRaw(S.raw, true); });
+    $('batchSel').addEventListener('change', function (e) { S.batchFilter = e.target.value; S.limit = 150; renderTable(); });
+    $('searchInput').addEventListener('input', function (e) { S.query = e.target.value; S.limit = 150; renderTable(); });
+    $('btnMore').addEventListener('click', function () { S.limit += 150; renderTable(); });
+    $('btnResetAll').addEventListener('click', function () { if (S.items.length) resetAll(); });
+    $('btnClear').addEventListener('click', function () {
+      if (!S.items.length) return;
+      if (!S.clearArmed) {
+        S.clearArmed = true; renderTable();
+        setTimeout(function () { S.clearArmed = false; renderTable(); }, 3500);
+        return;
+      }
+      S.clearArmed = false; S.items = []; S.raw = []; S.manual = []; S.source = null; WB = null;
+      $('cfg').hidden = true; save(); renderAll(); toast('Cleared the list.', 'ok');
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && !$('pasteOv').hidden) closePaste();
+      if (e.altKey && (e.key === 'o' || e.key === 'O') && !$('view-batch').hidden) { e.preventDefault(); openNext(); }
+    });
+
+    if (!load()) loadSample(); else renderAll();
+  }
+  function importFromMaker(raw, name) {
+    WB = null; $('cfg').hidden = true;
+    S.source = { name: name, sample: false };
+    applyRaw(raw, false);
+    if (S.items.length) toast('Sent ' + plural(S.items.length, 'link') + ' to batches.', 'ok');
+  }
+  LD.send = importFromMaker;
+  LD.copy = copyText;
+  LD.toast = toast;
+  init();
+})();
+</script>
+
+<script>
+(function () {
+  'use strict';
+  var $ = function (id) { return document.getElementById(id); };
+  var MAX_ROWS = 200, MAX_COLS = 14;
+  var URL_RE = /(?:https?:\/\/|www\.)[^\s<>"']+/i;
+  var MAIL_RE = /^mailto:[^\s]+$/i;
+  var BARE_RE = /^(?:[a-z0-9-]+\.)+(?:com|org|net|edu|gov|int|info|news|io|co|in|uk|us|ca|au|de|fr|ac)(?:\/\S*)?$/i;
+  var LSV = 'linkdesk_view';
+  var M = { buf: null, name: '', example: true, wb: null, stats: null, sheet: 0, downloads: null };
+
+  function plural(n, w) { return n + ' ' + w + (n === 1 ? '' : 's'); }
+
+  function findLink(text, bare) {
+    var t = String(text).trim();
+    if (!t) return null;
+    if (MAIL_RE.test(t)) return t;
+    var m = t.match(URL_RE);
+    if (m) {
+      var u = m[0].replace(/[.,;:!?)\]}]+$/, '');
+      if (/^www\./i.test(u)) u = 'https://' + u;
+      return u;
+    }
+    if (bare && BARE_RE.test(t)) return 'https://' + t;
+    return null;
+  }
+  function convert(wb, bare) {
+    var stats = { linked: 0, already: 0, per: [] };
+    wb.SheetNames.forEach(function (name) {
+      var ws = wb.Sheets[name], n = 0;
+      Object.keys(ws).forEach(function (key) {
+        if (key[0] === '!') return;
+        var c = ws[key];
+        if (c.l && c.l.Target) { stats.already++; return; }
+        if (c.t !== 's' || typeof c.v !== 'string') return;
+        var u = findLink(c.v, bare);
+        if (u && u.length < 2000) { c.l = { Target: u, Tooltip: u }; n++; stats.linked++; }
+      });
+      stats.per.push({ name: name, n: n });
+    });
+    return stats;
+  }
+  function exampleWorkbook() {
+    var rows = [
+      ['Outlet', 'Section', 'Address'],
+      ['BBC News', 'World', 'https://www.bbc.com/news/world'],
+      ['The Hindu', 'National', 'https://www.thehindu.com/news/national/'],
+      ['Reuters', 'India', 'www.reuters.com/world/india/'],
+      ['WHO', 'Newsroom', 'https://www.who.int/news'],
+      ['Press Information Bureau', 'Releases', 'https://pib.gov.in'],
+      ['UNESCO', 'Media', 'unesco.org/en/media-information'],
+      ['Press Council of India', 'Home', 'https://presscouncil.nic.in'],
+      ['Editor\'s desk', 'Email', 'mailto:desk@example.com']
+    ];
+    var wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rows), 'Sources');
+    return wb;
+  }
+  function isWeb(t) { return /^https?:\/\//i.test(t || ''); }
+
+  /* every web link in the converted workbook, with the first plain text cell of its row as the title */
+  function collect() {
+    var out = [], seenRowLabel;
+    M.wb.SheetNames.forEach(function (name) {
+      var ws = M.wb.Sheets[name];
+      if (!ws || !ws['!ref']) return;
+      var rng = XLSX.utils.decode_range(ws['!ref']);
+      for (var r = rng.s.r; r <= rng.e.r; r++) {
+        var cells = [];
+        for (var c = rng.s.c; c <= rng.e.c; c++) cells.push(ws[XLSX.utils.encode_cell({ r: r, c: c })]);
+        var label = '';
+        cells.some(function (cell) {
+          if (!cell || cell.t !== 's' || !cell.v) return false;
+          var v = String(cell.v).trim();
+          if (!v || (cell.l && cell.l.Target) || findLink(v, false)) return false;
+          label = v; return true;
+        });
+        cells.forEach(function (cell) {
+          if (cell && cell.l && isWeb(cell.l.Target)) out.push({ url: cell.l.Target, label: label || ('Row ' + (r + 1)), row: r + 1 });
+        });
+      }
+    });
+    return out;
+  }
+
+  function build() {
+    var bare = $('mBare').checked;
+    var wb = M.buf ? XLSX.read(M.buf, { type: 'array' }) : exampleWorkbook();
+    M.wb = wb; M.stats = convert(wb, bare);
+    if (M.sheet >= wb.SheetNames.length) M.sheet = 0;
+    render();
+  }
+
+  function render() {
+    var s = M.stats, wb = M.wb, chip = $('mChip');
+    chip.hidden = false;
+    if (M.example) { chip.textContent = 'Example rows'; chip.className = 'chip sample'; }
+    else { chip.textContent = M.name; chip.className = 'chip'; }
+    $('mFileLine').textContent = M.example ? 'Sample rows. Upload your own file to replace them.' : M.name;
+    var total = s.linked;
+    var line = plural(total, 'link') + ' made clickable';
+    if (wb.SheetNames.length > 1) line += ' across ' + plural(wb.SheetNames.length, 'sheet');
+    $('mCountLine').textContent = line;
+
+    var hint = $('mHint'), dl = $('mDl');
+    hint.className = 'hint mk-hint';
+    if (total === 0) { dl.disabled = true; hint.className = 'hint mk-hint warn'; hint.textContent = s.already ? 'Every link in this file is already clickable.' : 'No web addresses were found in this file.'; }
+    else { dl.disabled = false; hint.textContent = M.example ? 'These are example rows. Upload your own file to convert it, or download this sample.' : (s.already ? s.already + ' were already clickable and are kept.' : 'Opens in Excel with every address clickable.'); }
+    $('mSend').disabled = collect().length === 0;
+    renderTabs(); renderSheet();
+  }
+  function renderTabs() {
+    var box = $('mTabs'); box.innerHTML = '';
+    M.wb.SheetNames.forEach(function (name, i) {
+      var b = document.createElement('button');
+      b.className = 'mk-tab'; b.type = 'button'; b.setAttribute('role', 'tab');
+      b.setAttribute('aria-selected', i === M.sheet ? 'true' : 'false');
+      b.appendChild(document.createTextNode(name));
+      var n = document.createElement('span'); n.className = 'n'; n.textContent = M.stats.per[i].n;
+      b.appendChild(n);
+      b.addEventListener('click', function () { M.sheet = i; renderTabs(); renderSheet(); });
+      box.appendChild(b);
+    });
+  }
+  function renderSheet() {
+    var name = M.wb.SheetNames[M.sheet], ws = M.wb.Sheets[name], host = $('mSheet');
+    host.innerHTML = '';
+    if (!ws || !ws['!ref']) { host.innerHTML = '<div class="mk-empty">This sheet is empty.</div>'; $('mCap').textContent = ''; return; }
+    var rng = XLSX.utils.decode_range(ws['!ref']);
+    var rows = Math.min(rng.e.r - rng.s.r + 1, MAX_ROWS), cols = Math.min(rng.e.c - rng.s.c + 1, MAX_COLS);
+    var table = document.createElement('table');
+    var thead = document.createElement('thead'), hr = document.createElement('tr');
+    hr.appendChild(document.createElement('th'));
+    for (var c = 0; c < cols; c++) { var th = document.createElement('th'); th.textContent = XLSX.utils.encode_col(rng.s.c + c); hr.appendChild(th); }
+    thead.appendChild(hr); table.appendChild(thead);
+    var tbody = document.createElement('tbody');
+    for (var r = 0; r < rows; r++) {
+      var tr = document.createElement('tr');
+      var rh = document.createElement('th'); rh.setAttribute('scope', 'row'); rh.textContent = rng.s.r + r + 1; tr.appendChild(rh);
+      for (var cc = 0; cc < cols; cc++) {
+        var cell = ws[XLSX.utils.encode_cell({ r: rng.s.r + r, c: rng.s.c + cc })];
+        var td = document.createElement('td');
+        if (cell) {
+          var txt = cell.w != null ? cell.w : (cell.v != null ? String(cell.v) : '');
+          td.title = txt;
+          if (cell.l && cell.l.Target && /^(https?:|mailto:)/i.test(cell.l.Target)) {
+            td.className = 'lk';
+            var a = document.createElement('a');
+            a.href = cell.l.Target; a.target = '_blank'; a.rel = 'noopener noreferrer'; a.textContent = txt;
+            td.appendChild(a);
+          } else td.textContent = txt;
+        }
+        tr.appendChild(td);
+      }
+      tbody.appendChild(tr);
+    }
+    table.appendChild(tbody); host.appendChild(table);
+    var tr2 = rng.e.r - rng.s.r + 1, tc = rng.e.c - rng.s.c + 1;
+    var cap = 'Preview of sheet ' + name + '. Cells with a blue background are clickable links.';
+    if (tr2 > rows || tc > cols) cap += ' Showing ' + rows + ' of ' + tr2 + ' rows and ' + cols + ' of ' + tc + ' columns. The download contains all of them.';
+    $('mCap').textContent = cap;
+  }
+
+  function loadFile(file) {
+    if (!file) return;
+    if (typeof XLSX === 'undefined') { $('mHint').textContent = 'The spreadsheet reader did not load. Reload the page.'; return; }
+    file.arrayBuffer().then(function (buf) {
+      M.buf = buf; M.name = file.name; M.example = false; M.sheet = 0;
+      $('mDropTitle').textContent = file.name + '. Choose another file to replace it.';
+      try { build(); } catch (e) {
+        M.buf = null; M.example = true; build();
+        $('mHint').className = 'hint mk-hint warn';
+        $('mHint').textContent = 'That file could not be read. Check that it is a real Excel or CSV file.';
+      }
+    });
+  }
+
+  $('mFile').addEventListener('change', function (e) { loadFile(e.target.files[0]); e.target.value = ''; });
+  var drop = $('mDrop');
+  ['dragenter', 'dragover'].forEach(function (ev) { drop.addEventListener(ev, function (e) { e.preventDefault(); drop.classList.add('over'); }); });
+  ['dragleave', 'drop'].forEach(function (ev) { drop.addEventListener(ev, function (e) { e.preventDefault(); drop.classList.remove('over'); }); });
+  drop.addEventListener('drop', function (e) { loadFile(e.dataTransfer.files[0]); });
+  $('mBare').addEventListener('change', function () { if (typeof XLSX !== 'undefined') build(); });
+
+  $('mSend').addEventListener('click', function () {
+    if (!M.wb) return;
+    var raw = collect();
+    if (!raw.length) return;
+    LD.send(raw, M.example ? 'Example rows' : M.name);
+    show('batch');
+  });
+
+  $('mDl').addEventListener('click', function () {
+    if (!M.wb) return;
+    var out = XLSX.write(M.wb, { bookType: 'xlsx', type: 'array' });
+    var base = M.example ? 'sample' : (M.name.replace(/\.[^.]+$/, '') || 'links');
+    var fname = base + '-clickable.xlsx';
+    var blob = new Blob([out], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    var hint = $('mHint');
+    function fallback() {
+      try {
+        var a = document.createElement('a');
+        a.href = URL.createObjectURL(blob); a.download = fname;
+        document.body.appendChild(a); a.click(); a.remove();
+      } catch (e) {}
+      hint.className = 'hint mk-hint';
+      hint.textContent = 'Download started. If no file was saved, this view blocks downloads. Open LinkDesk in its own browser tab and try again.';
+    }
+    var getD = M.downloads ? Promise.resolve(M.downloads) : ((window.claude && window.claude.use) ? window.claude.use('downloads') : Promise.resolve(null));
+    getD.then(function (d) {
+      if (!d) { fallback(); return; }
+      M.downloads = d;
+      return d.save({ filename: fname, data: blob }).then(function () {
+        hint.className = 'hint mk-hint ok'; hint.textContent = 'Saved as ' + fname;
+      }, function (err) {
+        if (err && err.code === 'declined') { hint.className = 'hint mk-hint warn'; hint.textContent = 'Save cancelled. Press the button to try again.'; }
+        else fallback();
+      });
+    }, fallback);
+  });
+
+  /* view switching */
+  function show(v) {
+    if (v !== 'maker' && v !== 'extract') v = 'batch';
+    $('view-maker').hidden = v !== 'maker';
+    $('view-extract').hidden = v !== 'extract';
+    $('view-batch').hidden = v !== 'batch';
+    $('topTools').hidden = v !== 'batch';
+    document.querySelectorAll('.vt').forEach(function (b) { b.setAttribute('aria-selected', String(b.getAttribute('data-view') === v)); });
+    try { localStorage.setItem(LSV, v); } catch (e) {}
+  }
+  document.querySelectorAll('.vt').forEach(function (b) { b.addEventListener('click', function () { show(b.getAttribute('data-view')); }); });
+  var start = 'batch';
+  try { var sv = localStorage.getItem(LSV); if (sv === 'maker' || sv === 'extract') start = sv; } catch (e) {}
+  LD.show = show;
+  show(start);
+
+  if (typeof XLSX !== 'undefined') build();
+  else $('mCountLine').textContent = 'The spreadsheet reader did not load. Reload the page.';
+
+  if (window.claude && window.claude.use) {
+    window.claude.use('downloads').then(function (d) { M.downloads = d; if (M.wb) render(); }).catch(function () {});
+  }
+})();
+</script>
+
+<script>
+(function () {
+  'use strict';
+  var $ = function (id) { return document.getElementById(id); };
+  var CDN = 'https://cdnjs.cloudflare.com/ajax/libs/';
+  var JSZIP = CDN + 'jszip/3.10.1/jszip.min.js';
+  var PDFJS = CDN + 'pdf.js/3.11.174/pdf.min.js';
+  var PDFWORKER = CDN + 'pdf.js/3.11.174/pdf.worker.min.js';
+  var URL_RE = /(?:https?:\/\/|www\.)[^\s<>"'`]+/gi;
+  var BARE_RE = /(?<![@\w.\/-])(?:[a-z0-9-]+\.)+(?:com|org|net|edu|gov|int|info|news|io|co|in|uk|us|ca|au|de|fr|ac)(?![\w-])(?:\/[^\s<>"'`]*)?/gi;
+  var SAMPLE = [
+    'JOUR 201 Reporting and Writing. Reading list',
+    '',
+    'Week 1. What counts as news',
+    'Poynter, reporting and editing guides: https://www.poynter.org/reporting-editing/',
+    'Reuters, handbook of journalism - www.reuters.com/',
+    '',
+    'Week 2. Sources and attribution',
+    'Press Information Bureau releases (https://pib.gov.in).',
+    'Press Council of India: https://presscouncil.nic.in/',
+    '',
+    'Week 3. Data and verification',
+    'First Draft verification guide https://firstdraftnews.org/long-form-article/',
+    'Same list again for reference: https://www.poynter.org/reporting-editing/',
+    'Send questions to the desk at desk@example.com'
+  ].join('\n');
+
+  var E = { items: [], name: '', example: true, limit: 300, note: '', busy: '' };
+  var timer = null;
+
+  function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;'); }
+  function plural(n, w) { return n + ' ' + w + (n === 1 ? '' : 's'); }
+  function toast(m, t) { if (window.LD && LD.toast) LD.toast(m, t); }
+
+  var loaded = {};
+  function loadScript(src) {
+    if (loaded[src]) return loaded[src];
+    loaded[src] = new Promise(function (res, rej) {
+      var s = document.createElement('script');
+      s.src = src; s.onload = res;
+      s.onerror = function () { delete loaded[src]; rej(new Error('Could not load ' + src)); };
+      document.head.appendChild(s);
+    });
+    return loaded[src];
+  }
+
+  /* ---------- finding links in text ---------- */
+  function cleanUrl(u) {
+    u = u.replace(/[.,;:!?'"\]}>…”’]+$/, '');
+    while (/\)$/.test(u) && (u.match(/\(/g) || []).length < (u.match(/\)/g) || []).length) u = u.replace(/\)$/, '');
+    u = u.replace(/[.,;:!?'"\]}>…”’]+$/, '');
+    return u;
+  }
+  function repairLines(lines) {
+    var out = [];
+    lines.forEach(function (line) {
+      if (out.length) {
+        var prev = out[out.length - 1], t = line.trim();
+        if (/(?:https?:\/\/|www\.)\S+$/i.test(prev) && prev.length >= 60 && /^\S+$/.test(t) &&
+            /[\/.\-_=?&%#]/.test(t) && !/^(?:https?:\/\/|www\.)/i.test(t) && !/@/.test(t)) {
+          out[out.length - 1] = prev + t; return;
+        }
+      }
+      out.push(line);
+    });
+    return out;
+  }
+  function labelFor(line, ranges) {
+    var t = '', pos = 0;
+    ranges.forEach(function (r) { t += line.slice(pos, r[0]) + ' '; pos = r[1]; });
+    t += line.slice(pos);
+    t = t.replace(/[()\[\]<>]/g, ' ').replace(/^[\s\-•*\d.)]+/, '').replace(/[\s:,;\-–—]+$/, '').replace(/\s+/g, ' ').trim();
+    return t.slice(0, 90);
+  }
+  function fromText(text, where, opts) {
+    var out = [];
+    var lines = text.split(/\r?\n/);
+    if (opts.repair) lines = repairLines(lines);
+    lines.forEach(function (line, i) {
+      if (!line.trim()) return;
+      var hits = [], m;
+      URL_RE.lastIndex = 0;
+      while ((m = URL_RE.exec(line))) {
+        var u = cleanUrl(m[0]);
+        if (u.length > 6) hits.push({ s: m.index, e: m.index + m[0].length, u: u });
+      }
+      if (opts.bare) {
+        BARE_RE.lastIndex = 0;
+        while ((m = BARE_RE.exec(line))) {
+          var s0 = m.index, e0 = m.index + m[0].length;
+          if (hits.some(function (h) { return s0 < h.e && e0 > h.s; })) continue;
+          var bu = cleanUrl(m[0]);
+          if (bu.length > 3) hits.push({ s: s0, e: e0, u: bu });
+        }
+      }
+      if (!hits.length) return;
+      hits.sort(function (a, b) { return a.s - b.s; });
+      var label = labelFor(line, hits.map(function (h) { return [h.s, h.e]; }));
+      hits.forEach(function (h) {
+        var url = /^https?:\/\//i.test(h.u) ? h.u : 'https://' + h.u;
+        out.push({ url: url, label: label, where: where(i), src: 'text' });
+      });
+    });
+    return out;
+  }
+  function finish(items, opts) {
+    if (!opts.dedupe) return items;
+    var seen = {}, out = [];
+    items.forEach(function (it) {
+      var k = it.url.toLowerCase().replace(/\/$/, '');
+      if (seen[k] !== undefined) {
+        var ex = out[seen[k]];
+        if (!ex.label && it.label) ex.label = it.label;
+        return;
+      }
+      seen[k] = out.length; out.push(it);
+    });
+    return out;
+  }
+
+  /* ---------- Word ---------- */
+  function textOf(node, tag) {
+    var parts = node.getElementsByTagName(tag), t = '';
+    for (var i = 0; i < parts.length; i++) t += parts[i].textContent;
+    return t;
+  }
+  function readDocx(buf, opts) {
+    return loadScript(JSZIP).then(function () { return JSZip.loadAsync(buf); }).then(function (zip) {
+      var names = Object.keys(zip.files).filter(function (n) { return /^word\/(document|footnotes|endnotes|header\d*|footer\d*)\.xml$/.test(n); });
+      if (!names.length) throw new Error('nodoc');
+      var all = [];
+      return names.reduce(function (chain, name) {
+        return chain.then(function () {
+          var base = name.split('/').pop();
+          var relName = 'word/_rels/' + base + '.rels';
+          return Promise.all([zip.file(name).async('string'), zip.file(relName) ? zip.file(relName).async('string') : Promise.resolve('')]).then(function (r) {
+            var rels = {};
+            if (r[1]) {
+              var rd = new DOMParser().parseFromString(r[1], 'application/xml').getElementsByTagName('Relationship');
+              for (var i = 0; i < rd.length; i++) rels[rd[i].getAttribute('Id')] = rd[i].getAttribute('Target');
+            }
+            var doc = new DOMParser().parseFromString(r[0], 'application/xml');
+            var ps = doc.getElementsByTagName('w:p');
+            var part = base === 'document.xml' ? 'Paragraph ' : base.replace('.xml', '') + ' ';
+            for (var p = 0; p < ps.length; p++) {
+              var para = ps[p], text = textOf(para, 'w:t'), where = part + (p + 1);
+              if (!text.trim() && !para.getElementsByTagName('w:instrText').length) continue;
+              var snippet = text.replace(/\s+/g, ' ').trim().slice(0, 90);
+              var hl = para.getElementsByTagName('w:hyperlink');
+              for (var h = 0; h < hl.length; h++) {
+                var tgt = rels[hl[h].getAttribute('r:id')] || '';
+                if (/^https?:\/\//i.test(tgt)) {
+                  var lt = textOf(hl[h], 'w:t').replace(/\s+/g, ' ').trim();
+                  all.push({ url: tgt, label: (lt && !/^(?:https?:\/\/|www\.)/i.test(lt)) ? lt.slice(0, 90) : snippet.replace(lt, '').trim().slice(0, 90), where: where, src: 'link' });
+                }
+              }
+              var ins = para.getElementsByTagName('w:instrText');
+              for (var q = 0; q < ins.length; q++) {
+                var mm = /HYPERLINK\s+"([^"]+)"/i.exec(ins[q].textContent);
+                if (mm && /^https?:\/\//i.test(mm[1])) all.push({ url: mm[1], label: snippet, where: where, src: 'link' });
+              }
+              all = all.concat(fromText(text, function () { return where; }, opts));
+            }
+          });
+        });
+      }, Promise.resolve()).then(function () { return all; });
+    });
+  }
+
+  /* ---------- PDF ---------- */
+  function readPdf(buf, opts) {
+    return loadScript(PDFWORKER).then(function () { return loadScript(PDFJS); }).then(function () {
+      pdfjsLib.GlobalWorkerOptions.workerSrc = PDFWORKER;
+      return pdfjsLib.getDocument({ data: new Uint8Array(buf) }).promise;
+    }).then(function (pdf) {
+      var all = [], chars = 0, pages = [];
+      for (var n = 1; n <= pdf.numPages; n++) pages.push(n);
+      return pages.reduce(function (chain, n) {
+        return chain.then(function () {
+          return pdf.getPage(n).then(function (page) {
+            return Promise.all([page.getTextContent(), page.getAnnotations()]).then(function (r) {
+              var items = r[0].items, annots = r[1], text = '';
+              items.forEach(function (it) { text += it.str; chars += it.str.trim().length; text += it.hasEOL ? '\n' : (it.str && !/\s$/.test(it.str) ? ' ' : ''); });
+              all = all.concat(fromText(text, function () { return 'Page ' + n; }, opts));
+              annots.forEach(function (a) {
+                if (a.subtype !== 'Link' || !a.url || !/^https?:\/\//i.test(a.url) || !a.rect) return;
+                var x1 = Math.min(a.rect[0], a.rect[2]) - 2, x2 = Math.max(a.rect[0], a.rect[2]) + 2;
+                var y1 = Math.min(a.rect[1], a.rect[3]) - 2, y2 = Math.max(a.rect[1], a.rect[3]) + 2;
+                var lab = items.filter(function (it) {
+                  var x = it.transform[4], y = it.transform[5];
+                  return x >= x1 && x <= x2 && y >= y1 && y <= y2 && it.str.trim();
+                }).map(function (it) { return it.str; }).join(' ').replace(/\s+/g, ' ').trim();
+                if (/^(?:https?:\/\/|www\.)/i.test(lab)) lab = '';
+                all.push({ url: a.url, label: lab.slice(0, 90), where: 'Page ' + n, src: 'link' });
+              });
+            });
+          });
+        });
+      }, Promise.resolve()).then(function () { return { items: all, chars: chars }; });
+    });
+  }
+
+  /* ---------- running an extraction ---------- */
+  function opts() { return { dedupe: $('exDedupe').checked, repair: $('exRepair').checked, bare: $('exBare').checked }; }
+  function setItems(items, name, example, note) {
+    E.items = items; E.name = name; E.example = example; E.limit = 300; E.note = note || ''; E.busy = '';
+    render();
+  }
+  function runText() {
+    var o = opts();
+    var items = finish(fromText($('exText').value, function (i) { return 'Line ' + (i + 1); }, o), o);
+    var isSample = $('exText').value === SAMPLE;
+    setItems(items, isSample ? 'Example text' : 'Pasted text', isSample, '');
+  }
+  var lastFile = null;
+  function runFile(file) {
+    if (!file) return;
+    lastFile = file;
+    var name = file.name, ext = (name.split('.').pop() || '').toLowerCase();
+    var o = opts();
+    if (ext === 'doc') { toast('Old .doc files are not supported. Save it as .docx or PDF and try again.', 'warn'); return; }
+    E.busy = 'Reading ' + name + '...'; render();
+    $('exDropTitle').textContent = name + '. Choose another file to replace it.';
+    var job;
+    if (ext === 'docx') job = file.arrayBuffer().then(function (b) { return readDocx(b, o); }).then(function (items) { return { items: items, note: '' }; });
+    else if (ext === 'pdf') job = file.arrayBuffer().then(function (b) { return readPdf(b, o); }).then(function (r) {
+      return { items: r.items, note: r.chars < 20 ? 'This PDF has no selectable text. It is probably a scan, so no links can be read from it.' : 'Long addresses in PDFs can break at line ends. Check the list before you rely on it.' };
+    });
+    else job = file.text().then(function (t) { return { items: fromText(t, function (i) { return 'Line ' + (i + 1); }, o), note: '' }; });
+    job.then(function (r) {
+      $('exText').value = '';
+      setItems(finish(r.items, o), name, false, r.note);
+    }).catch(function (err) {
+      E.busy = ''; render();
+      toast(ext === 'docx' ? 'That Word file could not be read. Check that it is a .docx file.' : ext === 'pdf' ? 'That PDF could not be read. Check that the file is not damaged or locked.' : 'That file could not be read.', 'warn');
+    });
+  }
+
+  /* ---------- rendering ---------- */
+  function visible() { return E.items; }
+  function render() {
+    var n = E.items.length;
+    var chip = $('exChip'); chip.hidden = false;
+    chip.textContent = E.example ? 'Example text' : E.name;
+    chip.className = 'chip' + (E.example ? ' sample' : '');
+    $('exFileLine').textContent = E.example ? 'Sample text. Paste or add your own to replace it.' : E.name;
+    var links = E.items.filter(function (i) { return i.src === 'link'; }).length;
+    $('exCount').textContent = plural(n, 'link') + ' found' + (links && n ? ' (' + links + ' from clickable text)' : '');
+    ['exCopy', 'exXlsx', 'exSend'].forEach(function (id) { $(id).disabled = !n; });
+    var busy = $('exBusy'); busy.hidden = !E.busy; busy.textContent = E.busy;
+    var note = $('exNote'); note.hidden = !E.note; note.textContent = E.note;
+    var body = $('exRows');
+    if (!n) {
+      body.innerHTML = '<tr><td colspan="6" class="none">' + (E.busy ? 'Reading the document...' : 'No links found. Paste text that contains web addresses, or add a document.') + '</td></tr>';
+      $('exMoreWrap').hidden = true; $('exCap').textContent = ''; return;
+    }
+    var html = '', shown = Math.min(n, E.limit);
+    for (var i = 0; i < shown; i++) {
+      var it = E.items[i];
+      html += '<tr><td class="num">' + (i + 1) + '</td><td class="ex-where">' + esc(it.where) + '</td>' +
+        '<td class="ex-ctx" title="' + esc(it.label) + '">' + esc(it.label || '') + '</td>' +
+        '<td class="col-url"><a href="' + esc(it.url) + '" target="_blank" rel="noopener noreferrer" title="' + esc(it.url) + '">' + esc(it.url) + '</a></td>' +
+        '<td><span class="ex-src ' + it.src + '">' + (it.src === 'link' ? 'Clickable' : 'Text') + '</span></td>' +
+        '<td class="act"><button class="btn sm icon" type="button" data-rm="' + i + '" aria-label="Remove this link" title="Remove"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 7h14M10 7V4h4v3M7 7l1 13h8l1-13"/></svg></button></td></tr>';
+    }
+    body.innerHTML = html;
+    $('exMoreWrap').hidden = n <= shown;
+    $('exMore').textContent = 'Show ' + Math.min(300, n - shown) + ' more';
+    $('exCap').textContent = 'Showing ' + shown + ' of ' + n + '. "Clickable" links were attached to words in the document. "Text" links were written out as addresses.';
+  }
+
+  /* ---------- actions ---------- */
+  function toRaw() { return E.items.map(function (it, i) { return { url: it.url, label: it.label || it.where, row: i + 1 }; }); }
+  function saveBlob(blob, fname, doneMsg) {
+    function fallback() {
+      try { var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = fname; document.body.appendChild(a); a.click(); a.remove(); } catch (e) {}
+      toast('Download started. If no file was saved, open LinkDesk in its own browser tab and try again.', 'ok');
+    }
+    var getD = (window.claude && window.claude.use) ? window.claude.use('downloads') : Promise.resolve(null);
+    getD.then(function (d) {
+      if (!d) { fallback(); return; }
+      return d.save({ filename: fname, data: blob }).then(function () { toast(doneMsg, 'ok'); }, function (err) {
+        if (err && err.code === 'declined') toast('Save cancelled.', 'warn'); else fallback();
+      });
+    }, fallback);
+  }
+  $('exXlsx').addEventListener('click', function () {
+    if (!E.items.length || typeof XLSX === 'undefined') return;
+    var aoa = [['#', 'Found in', 'Title', 'Link']];
+    E.items.forEach(function (it, i) { aoa.push([i + 1, it.where, it.label, it.url]); });
+    var ws = XLSX.utils.aoa_to_sheet(aoa);
+    E.items.forEach(function (it, i) { var c = ws['D' + (i + 2)]; if (c) c.l = { Target: it.url, Tooltip: it.url }; });
+    ws['!cols'] = [{ wch: 5 }, { wch: 14 }, { wch: 44 }, { wch: 70 }];
+    var wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Links');
+    var out = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+    var base = E.example ? 'sample' : (E.name.replace(/\.[^.]+$/, '') || 'links');
+    saveBlob(new Blob([out], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), base + '-links.xlsx', 'Saved ' + base + '-links.xlsx');
+  });
+  $('exCopy').addEventListener('click', function () {
+    if (E.items.length && LD.copy) LD.copy(E.items.map(function (i) { return i.url; }).join('\n'), 'Copied ' + plural(E.items.length, 'link') + '.');
+  });
+  $('exSend').addEventListener('click', function () {
+    if (!E.items.length) return;
+    LD.send(toRaw(), E.example ? 'Example text' : E.name);
+    LD.show('batch');
+  });
+  $('exMore').addEventListener('click', function () { E.limit += 300; render(); });
+  $('exRows').addEventListener('click', function (e) {
+    var b = e.target.closest && e.target.closest('[data-rm]');
+    if (!b) return;
+    E.items.splice(parseInt(b.getAttribute('data-rm'), 10), 1); render();
+  });
+  $('exText').addEventListener('input', function () { clearTimeout(timer); lastFile = null; $('exDropTitle').textContent = 'Drop a Word or PDF file or browse'; timer = setTimeout(runText, 250); });
+  ['exDedupe', 'exRepair', 'exBare'].forEach(function (id) {
+    $(id).addEventListener('change', function () { if (lastFile) runFile(lastFile); else runText(); });
+  });
+  $('exFile').addEventListener('change', function (e) { runFile(e.target.files[0]); e.target.value = ''; });
+  var drop = $('exDrop');
+  ['dragenter', 'dragover'].forEach(function (ev) { drop.addEventListener(ev, function (e) { e.preventDefault(); drop.classList.add('over'); }); });
+  ['dragleave', 'drop'].forEach(function (ev) { drop.addEventListener(ev, function (e) { e.preventDefault(); drop.classList.remove('over'); }); });
+  drop.addEventListener('drop', function (e) { runFile(e.dataTransfer.files[0]); });
+
+  $('exText').value = SAMPLE;
+  runText();
+})();
+</script>
+</body>
+</html>
