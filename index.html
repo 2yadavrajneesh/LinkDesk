@@ -628,6 +628,7 @@ var LD = {
     try {
       var p = JSON.parse(raw);
       if (!p || !Array.isArray(p.items)) return false;
+      if (p.source && p.source.sample) return false;
       S.raw = Array.isArray(p.raw) ? p.raw : [];
       S.items = p.items;
       S.size = Math.min(100, Math.max(1, parseInt(p.size, 10) || 20));
@@ -1152,7 +1153,8 @@ var LD = {
       if (e.altKey && (e.key === 'o' || e.key === 'O') && !$('view-batch').hidden) { e.preventDefault(); openNext(); }
     });
 
-    if (!load()) loadSample(); else renderAll();
+    load();
+    renderAll();
   }
   function importFromMaker(raw, name) {
     WB = null; $('cfg').hidden = true;
