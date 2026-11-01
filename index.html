@@ -318,6 +318,7 @@ tr.is-opened td:not(.act) { color: var(--muted); }
 /* Extract links */
 .ex-text { font: 400 12.5px var(--mono); resize: vertical; min-height: 170px; line-height: 1.55; }
 .ex-opts { display: flex; flex-wrap: wrap; gap: 8px 22px; }
+.ex-limit { display: flex; align-items: center; gap: 8px; margin-top: -6px; padding: 8px 12px; border: 1px solid var(--warn); border-radius: 8px; background: var(--warn-soft); color: var(--warn); font: 600 12.5px var(--ui); }
 .ex-or { display: flex; align-items: center; gap: 12px; color: var(--muted); font-size: 12.5px; }
 .ex-or::before, .ex-or::after { content: ""; flex: 1; height: 1px; background: var(--line); }
 .ex-ctx { max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
@@ -495,6 +496,7 @@ tr.is-opened td:not(.act) { color: var(--muted); }
         <strong id="exDropTitle">Drop a Word or PDF file or browse</strong>
         <small>.docx, .pdf, .txt, .md, .html. The file stays in your browser.</small>
       </label>
+      <p class="ex-limit" role="note"><span data-ic="warn"></span>Maximum file size is 100 MB per file.</p>
       <div class="ex-opts">
         <label class="check"><input type="checkbox" id="exDedupe" checked><span>Remove duplicates</span></label>
         <label class="check"><input type="checkbox" id="exRepair" checked><span>Join links split across lines</span></label>
@@ -1210,13 +1212,12 @@ var LD = {
   function exampleWorkbook() {
     var rows = [
       ['Outlet', 'Section', 'Address'],
-      ['BBC News', 'World', 'https://www.bbc.com/news/world'],
       ['The Hindu', 'National', 'https://www.thehindu.com/news/national/'],
-      ['Reuters', 'India', 'www.reuters.com/world/india/'],
+      ['OpIndia', 'News', 'www.opindia.com'],
       ['WHO', 'Newsroom', 'https://www.who.int/news'],
       ['Press Information Bureau', 'Releases', 'https://pib.gov.in'],
-      ['UNESCO', 'Media', 'unesco.org/en/media-information'],
-      ['Press Council of India', 'Home', 'https://presscouncil.nic.in'],
+      ['Swarajya', 'Magazine', 'swarajyamag.com'],
+      ['The Indian Express', 'India', 'https://indianexpress.com/section/india/'],
       ['Editor\'s desk', 'Email', 'mailto:desk@example.com']
     ];
     var wb = XLSX.utils.book_new();
@@ -1428,16 +1429,16 @@ var LD = {
     'JOUR 201 Reporting and Writing. Reading list',
     '',
     'Week 1. What counts as news',
-    'Poynter, reporting and editing guides: https://www.poynter.org/reporting-editing/',
-    'Reuters, handbook of journalism - www.reuters.com/',
+    'OpIndia, news and opinion: https://www.opindia.com/',
+    'Swarajya magazine - www.swarajyamag.com/',
     '',
     'Week 2. Sources and attribution',
     'Press Information Bureau releases (https://pib.gov.in).',
-    'Press Council of India: https://presscouncil.nic.in/',
+    'The Indian Express, national coverage: https://indianexpress.com/',
     '',
     'Week 3. Data and verification',
     'First Draft verification guide https://firstdraftnews.org/long-form-article/',
-    'Same list again for reference: https://www.poynter.org/reporting-editing/',
+    'Same list again for reference: https://www.opindia.com/',
     'Send questions to the desk at desk@example.com'
   ].join('\n');
 
