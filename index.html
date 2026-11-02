@@ -329,6 +329,7 @@ tr.is-opened td:not(.act) { color: var(--muted); }
 .ex-note { padding: 10px 16px; border-bottom: 1px solid var(--line); font-size: 12.5px; color: var(--warn); background: var(--warn-soft); }
 
 /* Link Cleaner */
+.cl-query { max-width: 460px; }
 .cl-chip { display: inline-block; font: 500 11px var(--mono); padding: 1px 7px; border-radius: 5px; background: var(--accent-soft); color: var(--accent); margin: 1px 4px 1px 0; white-space: nowrap; }
 .cl-same { color: var(--muted); font-size: 12.5px; }
 .cl-orig { max-width: 280px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 400 12px var(--mono); color: var(--muted); }
@@ -566,8 +567,17 @@ tr.is-opened td:not(.act) { color: var(--muted); }
         <small>.xlsx, .xls, .csv, .txt, .md, .html. The file stays in your browser.</small>
       </label>
       <p class="ex-limit" role="note"><span data-ic="warn"></span>Maximum file size is 100 MB per file.</p>
+      <div class="field cl-query">
+        <label for="clQuery">Everything after the ? in a link</label>
+        <select id="clQuery">
+          <option value="smart" selected>Remove it unless the page needs it (recommended)</option>
+          <option value="all">Always remove it</option>
+          <option value="tracking">Remove tracking codes only</option>
+          <option value="keep">Keep it all</option>
+        </select>
+        <span class="hint">Example: x.com/user/status/123?a=abc becomes x.com/user/status/123. Search pages, YouTube videos and .php or .aspx pages keep what they need.</span>
+      </div>
       <div class="ex-opts">
-        <label class="check"><input type="checkbox" id="clTrack" checked><span>Remove tracking codes (<code>utm_</code>, <code>fbclid</code>, <code>gclid</code>)</span></label>
         <label class="check"><input type="checkbox" id="clWrap" checked><span>Unwrap redirect links (Google, Facebook, Outlook)</span></label>
         <label class="check"><input type="checkbox" id="clDedupe" checked><span>Remove duplicates</span></label>
         <label class="check"><input type="checkbox" id="clBare" checked><span>Also clean bare domains such as <code>example.com</code></span></label>
@@ -1892,6 +1902,7 @@ var LD = {
   ];
 
   var SAMPLE = [
+    'https://x.com/RahulGandhi/status/2116908737474826463?a=eflt5qhrKJ7bX9pHueQ',
     'https://www.opindia.com/2026/10/story/?utm_source=twitter&utm_medium=social&fbclid=IwAR1x2y3',
     'https://www.google.com/url?q=https://swarajyamag.com/politics/article&sa=D&source=docs&ust=1730000000',
     'https://indianexpress.com/article/india/some-story/?utm_campaign=newsletter#:~:text=Delhi',
@@ -1965,6 +1976,13 @@ var LD = {
     });
     return { q: keep.length ? '?' + keep.join('&') : '', n: n };
   }
+  function needsQuery(host, path) {
+    if (path === '/' || path === '') return true;
+    if (/(^|\.)youtube\.com$/.test(host) && /^\/(watch|playlist|results)/.test(path)) return true;
+    if (/\.(php|aspx?|jspx?|cgi|do|ece|action|cfm)$/i.test(path)) return true;
+    var last = path.replace(/\/+$/, '').split('/').pop().toLowerCase();
+    return /^(search|results|query|find|watch|view|photo|detail|details|download|go|redirect|out|article)$/.test(last);
+  }
   function clean(raw, o) {
     var changes = [];
     var s = cleanUrl(raw);
@@ -1988,7 +2006,8 @@ var LD = {
     }
     var host = u.hostname.toLowerCase();
     var sq = stripQuery(u.search, host, o.track);
-    var path = u.pathname;
+    var path = u.pathname, extra = 0;
+    if (sq.q && (o.query === 'all' || (o.query === 'smart' && !needsQuery(host, u.pathname)))) { extra = sq.q.slice(1).split('&').length; sq.q = ''; }
     if (o.track && /(^|\.)amazon\.[a-z.]+$/.test(host)) {
       var p2 = path.replace(/\/ref(?:=|%3D)[^\/?#]*$/i, '');
       if (p2 !== path) { path = p2 || '/'; sq.n++; }
@@ -2000,6 +2019,7 @@ var LD = {
     if (o.anchor && hash) { hash = ''; changes.push('Anchor removed'); }
     if (u.username || u.password) changes.push('Login details removed');
     if (sq.n) changes.push('Tracking removed (' + sq.n + ')');
+    if (extra) changes.push('After ? removed (' + extra + ')');
     var proto = u.protocol;
     if (o.https && proto === 'http:') { proto = 'https:'; changes.push('Changed to https'); }
     if (o.slash) path = path.replace(/\/+$/, '');
@@ -2007,7 +2027,8 @@ var LD = {
     return { ok: true, url: out, changes: changes };
   }
   function opts() {
-    return { track: $('clTrack').checked, wrap: $('clWrap').checked, dedupe: $('clDedupe').checked, bare: $('clBare').checked,
+    var q = $('clQuery').value;
+    return { query: q, track: q !== 'keep', wrap: $('clWrap').checked, dedupe: $('clDedupe').checked, bare: $('clBare').checked,
              anchor: $('clAnchor').checked, slash: $('clSlash').checked, https: $('clHttps').checked };
   }
   function findHits(line, o) {
@@ -2227,7 +2248,7 @@ var LD = {
     $('clDropTitle').textContent = 'Drop a spreadsheet or text file or browse';
     timer = setTimeout(runText, 250);
   });
-  ['clTrack', 'clWrap', 'clDedupe', 'clBare', 'clAnchor', 'clSlash', 'clHttps'].forEach(function (id) {
+  ['clQuery', 'clWrap', 'clDedupe', 'clBare', 'clAnchor', 'clSlash', 'clHttps'].forEach(function (id) {
     $(id).addEventListener('change', function () { if (C.lastFile) process(C.lastFile.text, C.lastFile.name, false); else runText(); });
   });
   $('clFile').addEventListener('change', function (e) { runFile(e.target.files[0]); e.target.value = ''; });

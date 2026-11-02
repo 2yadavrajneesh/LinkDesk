@@ -5,7 +5,7 @@ A single-page, browser-only tool for working with web links in spreadsheets and 
 - **Make links:** upload an Excel or CSV file and download a copy where every plain-text address is clickable.
 - **Open in batches:** load links and open them in batches of 10, 20, 30 or 50 tabs, with progress tracking.
 - **Extract links:** paste text or add a Word, PDF, text or HTML file and pull out every web address, including links hidden behind clickable words.
-- **Link Cleaner:** paste messy links or add a file. It removes tracking codes (`utm_`, `fbclid`, `gclid` and others), unwraps redirect links from Google, Facebook, Outlook and similar, fixes broken schemes and defanged links, drops invalid lines and duplicates, and can check that each site responds.
+- **Link Cleaner:** paste messy links or add a file. It removes everything after the `?` when a page does not need it (for example `x.com/user/status/123?a=abc` becomes `x.com/user/status/123`), removes tracking codes (`utm_`, `fbclid`, `gclid` and others), unwraps redirect links from Google, Facebook, Outlook and similar, fixes broken schemes and defanged links, drops invalid lines and duplicates, and can check that each site responds.
 
 Everything runs in the browser. Files are never uploaded anywhere.
 
