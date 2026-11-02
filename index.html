@@ -508,7 +508,7 @@ tr.is-opened td:not(.act) { color: var(--muted); }
       </div>
       <div class="field">
         <label for="exText">Paste text from a syllabus, article, email or notes</label>
-        <textarea class="ex-text" id="exText" spellcheck="false"></textarea>
+        <textarea class="ex-text" id="exText" spellcheck="false" placeholder="Paste your text here, such as a syllabus, article, email or notes.&#10;&#10;Note: every web address in it is listed below, so you can copy it, download it or send it to batches."></textarea>
       </div>
       <div class="ex-or">or</div>
       <label class="drop" id="exDrop">
@@ -1548,24 +1548,8 @@ var LD = {
   var PDFWORKER = CDN + 'pdf.js/3.11.174/pdf.worker.min.js';
   var URL_RE = /(?:https?:\/\/|www\.)[^\s<>"'`]+/gi;
   var BARE_RE = /(?<![@\w.\/-])(?:[a-z0-9-]+\.)+(?:com|org|net|edu|gov|int|info|news|io|co|in|uk|us|ca|au|de|fr|ac)(?![\w-])(?:\/[^\s<>"'`]*)?/gi;
-  var SAMPLE = [
-    'JOUR 201 Reporting and Writing. Reading list',
-    '',
-    'Week 1. What counts as news',
-    'OpIndia, news and opinion: https://www.opindia.com/',
-    'Swarajya magazine - www.swarajyamag.com/',
-    '',
-    'Week 2. Sources and attribution',
-    'Press Information Bureau releases (https://pib.gov.in).',
-    'The Indian Express, national coverage: https://indianexpress.com/',
-    '',
-    'Week 3. Data and verification',
-    'First Draft verification guide https://firstdraftnews.org/long-form-article/',
-    'Same list again for reference: https://www.opindia.com/',
-    'Send questions to the desk at desk@example.com'
-  ].join('\n');
 
-  var E = { items: [], name: '', example: true, limit: 300, note: '', busy: '' };
+  var E = { items: [], name: '', example: false, limit: 300, note: '', busy: '' };
   var timer = null;
 
   function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;'); }
@@ -1759,8 +1743,7 @@ var LD = {
     var text = $('exText').value, cut = '';
     if (text.length > LD.MAX_TEXT) { text = text.slice(0, LD.MAX_TEXT); cut = 'The text was very long. Only the first 2 million characters were read.'; }
     var items = finish(fromText(text, function (i) { return 'Line ' + (i + 1); }, o), o);
-    var isSample = text === SAMPLE;
-    setItems(items, isSample ? 'Example text' : 'Pasted text', isSample, cut);
+    setItems(items, text.trim() ? 'Pasted text' : '', false, cut);
   }
   var lastFile = null;
   function runFile(file) {
@@ -1794,18 +1777,17 @@ var LD = {
   function visible() { return E.items; }
   function render() {
     var n = E.items.length;
-    var chip = $('exChip'); chip.hidden = false;
-    chip.textContent = E.example ? 'Example text' : E.name;
-    chip.className = 'chip' + (E.example ? ' sample' : '');
-    $('exFileLine').textContent = E.example ? 'Sample text. Paste or add your own to replace it.' : E.name;
+    var chip = $('exChip'); chip.hidden = !E.name;
+    chip.textContent = E.name; chip.className = 'chip';
+    $('exFileLine').textContent = E.name;
     var links = E.items.filter(function (i) { return i.src === 'link'; }).length;
-    $('exCount').textContent = plural(n, 'link') + ' found' + (links && n ? ' (' + links + ' from clickable text)' : '');
+    $('exCount').textContent = !E.name ? 'No links yet' : plural(n, 'link') + ' found' + (links && n ? ' (' + links + ' from clickable text)' : '');
     ['exCopy', 'exXlsx', 'exSend', 'exClean'].forEach(function (id) { $(id).disabled = !n; });
     var busy = $('exBusy'); busy.hidden = !E.busy; busy.textContent = E.busy;
     var note = $('exNote'); note.hidden = !E.note; note.textContent = E.note;
     var body = $('exRows');
     if (!n) {
-      body.innerHTML = '<tr><td colspan="6" class="none">' + (E.busy ? 'Reading the document...' : 'No links found. Paste text that contains web addresses, or add a document.') + '</td></tr>';
+      body.innerHTML = '<tr><td colspan="6" class="none">' + (E.busy ? 'Reading the document...' : E.name ? 'No links found. Check that the text contains web addresses, or try another file.' : 'Note: paste text above or add a Word or PDF file. Every web address in it, including links hidden behind clickable words, appears here.') + '</td></tr>';
       $('exMoreWrap').hidden = true; $('exCap').textContent = ''; return;
     }
     var html = '', shown = Math.min(n, E.limit);
@@ -1880,7 +1862,6 @@ var LD = {
   ['dragleave', 'drop'].forEach(function (ev) { drop.addEventListener(ev, function (e) { e.preventDefault(); drop.classList.remove('over'); }); });
   drop.addEventListener('drop', function (e) { runFile(e.dataTransfer.files[0]); });
 
-  $('exText').value = SAMPLE;
   runText();
 })();
 </script>
