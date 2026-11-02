@@ -4,8 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>LinkDesk</title>
+<script>try{document.documentElement.setAttribute('data-theme',localStorage.getItem('bulklink_theme')==='dark'?'dark':'light')}catch(e){document.documentElement.setAttribute('data-theme','light')}</script>
 <meta name="description" content="LinkDesk makes spreadsheet links clickable, pulls links out of pasted text, Word and PDF files, and opens them in batches. It runs in your browser and your files never leave your device.">
 <meta name="theme-color" content="#1F5FD6">
+<meta name="color-scheme" content="light dark">
 <meta property="og:type" content="website">
 <meta property="og:title" content="LinkDesk">
 <meta property="og:description" content="LinkDesk makes spreadsheet links clickable, pulls links out of pasted text, Word and PDF files, and opens them in batches. It runs in your browser and your files never leave your device.">
@@ -19,6 +21,7 @@
 <style>
 /* Layout: two working panels (load, launch) over a batch map and a link table. Batches are drawn as dot matrices, one dot per link. */
 :root {
+  color-scheme: light;
   --bg: #EEF1F4;
   --surface: #FFFFFF;
   --sunken: #E5EAEF;
@@ -330,6 +333,7 @@ tr.is-opened td:not(.act) { color: var(--muted); }
 
 /* Link Cleaner */
 .cl-query { max-width: 460px; }
+.cl-foot { border-top: 1px solid var(--line); border-bottom: 0; justify-content: space-between; }
 .cl-chip { display: inline-block; font: 500 11px var(--mono); padding: 1px 7px; border-radius: 5px; background: var(--accent-soft); color: var(--accent); margin: 1px 4px 1px 0; white-space: nowrap; }
 .cl-same { color: var(--muted); font-size: 12.5px; }
 .cl-orig { max-width: 280px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 400 12px var(--mono); color: var(--muted); }
@@ -557,7 +561,7 @@ tr.is-opened td:not(.act) { color: var(--muted); }
       </div>
       <div class="field">
         <label for="clText">One link per line, or any text that contains links</label>
-        <textarea class="ex-text" id="clText" spellcheck="false"></textarea>
+        <textarea class="ex-text" id="clText" spellcheck="false" placeholder="Paste your links here, one per line.&#10;&#10;Note: tracking codes and redirect wrappers are removed, and so is everything after the ? when the page does not need it."></textarea>
       </div>
       <div class="ex-or">or</div>
       <label class="drop" id="clDrop">
@@ -606,12 +610,19 @@ tr.is-opened td:not(.act) { color: var(--muted); }
       <div id="clNote" class="ex-note" hidden></div>
       <div class="scroll">
         <table>
-          <thead><tr><th>#</th><th>Original</th><th>Clean link</th><th>What was removed</th><th>Status</th><th style="text-align:right">Remove</th></tr></thead>
+          <thead><tr><th>#</th><th>Original</th><th>Clean link</th><th>What was removed</th><th>Status</th><th style="text-align:right">Actions</th></tr></thead>
           <tbody id="clRows"></tbody>
         </table>
       </div>
       <div class="more" id="clMoreWrap" hidden><button class="btn" id="clMore" type="button">Show more</button></div>
       <div class="mk-cap" id="clCap"></div>
+      <div class="tbar cl-foot" id="clFoot" hidden>
+        <span class="hint">Finished cleaning? Take all the links with you.</span>
+        <div class="mk-actions">
+          <button class="btn" type="button" id="clCopy2"><span data-ic="copy"></span>Copy all links</button>
+          <button class="btn primary" type="button" id="clXlsx2">Download Excel (.xlsx)</button>
+        </div>
+      </div>
       <details class="cl-rej" id="clRejWrap" hidden>
         <summary id="clRejSum"></summary>
         <ul id="clRejList"></ul>
@@ -1194,7 +1205,7 @@ var LD = {
   function init() {
     hydrateIcons();
     var t = LS.get(THEME);
-    if (t === 'dark' || t === 'light') document.documentElement.setAttribute('data-theme', t);
+    document.documentElement.setAttribute('data-theme', t === 'dark' ? 'dark' : 'light');
     paintThemeIcon();
 
     $('btnTheme').addEventListener('click', function () {
@@ -1267,7 +1278,7 @@ var LD = {
   var MAIL_RE = /^mailto:[^\s]+$/i;
   var BARE_RE = /^(?:[a-z0-9-]+\.)+(?:com|org|net|edu|gov|int|info|news|io|co|in|uk|us|ca|au|de|fr|ac)(?:\/\S*)?$/i;
   var LSV = 'linkdesk_view';
-  var M = { buf: null, name: '', example: true, wb: null, stats: null, sheet: 0, downloads: null };
+  var M = { buf: null, name: '', example: false, wb: null, stats: null, sheet: 0, downloads: null };
 
   function plural(n, w) { return n + ' ' + w + (n === 1 ? '' : 's'); }
 
@@ -1342,9 +1353,22 @@ var LD = {
     return out;
   }
 
+  function renderEmpty() {
+    M.wb = null; M.stats = null;
+    $('mChip').hidden = true;
+    $('mFileLine').textContent = '';
+    $('mCountLine').textContent = 'No file loaded yet';
+    $('mHint').className = 'hint mk-hint';
+    $('mHint').textContent = 'Note: choose an Excel or CSV file above. Every plain-text web address in it becomes a clickable link. Then you can download the new file or send the links to batches.';
+    $('mDl').disabled = true; $('mSend').disabled = true;
+    $('mTabs').innerHTML = '';
+    $('mSheet').innerHTML = '<div class="mk-empty">Your converted sheet will appear here.</div>';
+    $('mCap').textContent = '';
+  }
   function build() {
     var bare = $('mBare').checked;
-    var wb = M.buf ? XLSX.read(M.buf, { type: 'array' }) : exampleWorkbook();
+    if (!M.buf) { renderEmpty(); return; }
+    var wb = XLSX.read(M.buf, { type: 'array' });
     LD.checkCells(wb);
     M.wb = wb; M.stats = convert(wb, bare);
     if (M.sheet >= wb.SheetNames.length) M.sheet = 0;
@@ -1901,20 +1925,6 @@ var LD = {
     { h: /^t\.umblr\.com$/, p: /^\/redirect$/, k: ['z'] }
   ];
 
-  var SAMPLE = [
-    'https://x.com/RahulGandhi/status/2116908737474826463?a=eflt5qhrKJ7bX9pHueQ',
-    'https://www.opindia.com/2026/10/story/?utm_source=twitter&utm_medium=social&fbclid=IwAR1x2y3',
-    'https://www.google.com/url?q=https://swarajyamag.com/politics/article&sa=D&source=docs&ust=1730000000',
-    'https://indianexpress.com/article/india/some-story/?utm_campaign=newsletter#:~:text=Delhi',
-    '<https://www.thehindu.com/news/national/article.ece?homepage=true>,',
-    'https://l.facebook.com/l.php?u=https%3A%2F%2Fpib.gov.in%2FPressReleasePage.aspx%3FPRID%3D12345&h=AT0abc',
-    'Same story again: https://www.opindia.com/2026/10/story/?utm_source=whatsapp',
-    '[Read more](https://www.who.int/news?mkt_tok=abc123)',
-    'hxxps://firstdraftnews[.]org/about/',
-    'https://localhost:3000/test',
-    'htp:/broken link',
-    'just some text with no link in it'
-  ].join('\n');
 
   var C = { items: [], rejected: [], dups: 0, name: '', example: true, limit: 300, note: '', busy: '', checked: false, token: 0, lastFile: null };
   var timer = null;
@@ -2074,7 +2084,7 @@ var LD = {
   function runText() {
     var text = $('clText').value;
     C.lastFile = null;
-    process(text, text === SAMPLE ? 'Example text' : 'Pasted text', text === SAMPLE);
+    process(text, text.trim() ? 'Pasted text' : '', false);
   }
 
   /* ---------- files ---------- */
@@ -2165,17 +2175,17 @@ var LD = {
   }
   function render() {
     var n = C.items.length;
-    var chip = $('clChip'); chip.hidden = false;
-    chip.textContent = C.example ? 'Example text' : C.name;
-    chip.className = 'chip' + (C.example ? ' sample' : '');
-    $('clFileLine').textContent = C.example ? 'Sample text. Paste or add your own to replace it.' : C.name;
-    $('clCount').textContent = plural(n, 'clean link');
+    var chip = $('clChip'); chip.hidden = !C.name;
+    chip.textContent = C.name; chip.className = 'chip';
+    $('clFileLine').textContent = C.name;
+    $('clCount').textContent = n || C.rejected.length ? plural(n, 'clean link') : 'No links yet';
     var changed = C.items.filter(function (i) { return i.changes.length; }).length;
     var bits = [changed + ' cleaned', (n - changed) + ' already clean'];
     if (C.dups) bits.push(plural(C.dups, 'duplicate') + ' removed');
     if (C.rejected.length) bits.push(C.rejected.length + ' rejected');
     $('clSub').textContent = n || C.rejected.length ? bits.join('. ') + '.' : '';
     ['clCheck', 'clCopy', 'clXlsx', 'clSend'].forEach(function (id) { $(id).disabled = !n; });
+    $('clFoot').hidden = !n;
     var bad = C.items.some(function (i) { return i.state === 'bad'; });
     $('clCheck').textContent = bad ? 'Remove no-response links' : 'Check they respond';
     $('clCheck').setAttribute('data-mode', bad ? 'remove' : 'check');
@@ -2183,7 +2193,7 @@ var LD = {
     var note = $('clNote'); note.hidden = !C.note; note.textContent = C.note;
     var body = $('clRows');
     if (!n) {
-      body.innerHTML = '<tr><td colspan="6" class="none">No links yet. Paste messy links or add a file.</td></tr>';
+      body.innerHTML = '<tr><td colspan="6" class="none">Note: paste messy links above or add a file. Your clean links appear here, with tracking codes, redirect wrappers and garbage lines removed.</td></tr>';
       $('clMoreWrap').hidden = true; $('clCap').textContent = '';
     } else {
       var html = '', shown = Math.min(n, C.limit);
@@ -2194,7 +2204,7 @@ var LD = {
           '<td class="col-url"><a href="' + esc(it.url) + '" target="_blank" rel="noopener noreferrer" title="' + esc(it.url) + '">' + esc(it.url) + '</a></td>' +
           '<td>' + (it.changes.length ? it.changes.map(function (c) { return '<span class="cl-chip">' + esc(c) + '</span>'; }).join('') : '<span class="cl-same">No change</span>') + '</td>' +
           '<td>' + stateHtml(it) + '</td>' +
-          '<td class="act"><button class="btn sm icon" type="button" data-rm="' + i + '" aria-label="Remove this link" title="Remove"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 7h14M10 7V4h4v3M7 7l1 13h8l1-13"/></svg></button></td></tr>';
+          '<td class="act"><button class="btn sm icon" type="button" data-cp="' + i + '" aria-label="Copy this link" title="Copy link"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/></svg></button><button class="btn sm icon" type="button" data-rm="' + i + '" aria-label="Remove this link" title="Remove"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 7h14M10 7V4h4v3M7 7l1 13h8l1-13"/></svg></button></td></tr>';
       }
       body.innerHTML = html;
       $('clMoreWrap').hidden = n <= shown;
@@ -2239,10 +2249,14 @@ var LD = {
   });
   $('clMore').addEventListener('click', function () { C.limit += 300; render(); });
   $('clRows').addEventListener('click', function (e) {
+    var cp = e.target.closest && e.target.closest('[data-cp]');
+    if (cp) { var it = C.items[parseInt(cp.getAttribute('data-cp'), 10)]; if (it && LD.copy) LD.copy(it.url, 'Copied the link.'); return; }
     var b = e.target.closest && e.target.closest('[data-rm]');
     if (!b) return;
     C.items.splice(parseInt(b.getAttribute('data-rm'), 10), 1); render();
   });
+  $('clCopy2').addEventListener('click', function () { $('clCopy').click(); });
+  $('clXlsx2').addEventListener('click', function () { $('clXlsx').click(); });
   $('clText').addEventListener('input', function () {
     clearTimeout(timer);
     $('clDropTitle').textContent = 'Drop a spreadsheet or text file or browse';
@@ -2265,7 +2279,6 @@ var LD = {
     process(text, name, false);
   };
 
-  $('clText').value = SAMPLE;
   runText();
 })();
 </script>
