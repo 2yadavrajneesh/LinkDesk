@@ -8,16 +8,24 @@
   window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
 </script>
 <script defer src="/_vercel/insights/script.js"></script>
+<script>try{document.documentElement.setAttribute('data-theme',localStorage.getItem('bulklink_theme')==='dark'?'dark':'light')}catch(e){document.documentElement.setAttribute('data-theme','light')}</script>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 36 36'%3E%3Crect width='36' height='36' rx='8' fill='%23121C26'/%3E%3Cg fill='%236B9BFF'%3E%3Crect x='6' y='6' width='6' height='6' rx='1.5'/%3E%3Crect x='15' y='6' width='6' height='6' rx='1.5'/%3E%3Crect x='24' y='6' width='6' height='6' rx='1.5'/%3E%3Crect x='6' y='15' width='6' height='6' rx='1.5'/%3E%3C/g%3E%3Cg fill='%23566472'%3E%3Crect x='15' y='15' width='6' height='6' rx='1.5'/%3E%3Crect x='24' y='15' width='6' height='6' rx='1.5'/%3E%3Crect x='6' y='24' width='6' height='6' rx='1.5'/%3E%3Crect x='15' y='24' width='6' height='6' rx='1.5'/%3E%3Crect x='24' y='24' width='6' height='6' rx='1.5'/%3E%3C/g%3E%3C/svg%3E">
+<meta name="description" content="LinkDesk makes spreadsheet links clickable, pulls links out of pasted text, Word and PDF files, and opens them in batches. It runs in your browser and your files never leave your device.">
+<meta name="theme-color" content="#1F5FD6">
+<meta name="color-scheme" content="light dark">
+<meta property="og:type" content="website">
+<meta property="og:title" content="LinkDesk">
+<meta property="og:description" content="LinkDesk makes spreadsheet links clickable, pulls links out of pasted text, Word and PDF files, and opens them in batches. It runs in your browser and your files never leave your device.">
 </head>
 <body>
 
-<meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Schibsted+Grotesk:wght@400;500;600;700;800&display=swap">
 <style>
 /* Layout: two working panels (load, launch) over a batch map and a link table. Batches are drawn as dot matrices, one dot per link. */
 :root {
+  color-scheme: light;
   --bg: #EEF1F4;
   --surface: #FFFFFF;
   --sunken: #E5EAEF;
@@ -280,8 +288,8 @@ tr.is-opened td:not(.act) { color: var(--muted); }
 }
 
 /* Views and Link Maker */
-.views { display: flex; gap: 4px; border-bottom: 1px solid var(--line); overflow-x: auto; }
-.vt { border: 0; background: none; color: var(--muted); font: 600 14px var(--ui); padding: 10px 14px; border-bottom: 2px solid transparent; margin-bottom: -1px; cursor: pointer; white-space: nowrap; }
+.views { display: flex; gap: 4px; overflow-x: auto; overflow-y: hidden; box-shadow: inset 0 -1px 0 var(--line); }
+.vt { border: 0; background: none; color: var(--muted); font: 600 14px var(--ui); padding: 10px 14px; border-bottom: 2px solid transparent; cursor: pointer; white-space: nowrap; }
 .vt:hover { color: var(--ink); }
 .vt[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--accent); }
 .view { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
@@ -292,9 +300,9 @@ tr.is-opened td:not(.act) { color: var(--muted); }
 .mk-hint { padding: 10px 16px; border-bottom: 1px solid var(--line); }
 .mk-hint.ok { color: var(--ok); }
 .mk-hint.warn { color: var(--warn); }
-.mk-tabs { display: flex; gap: 4px; padding: 10px 14px 0; overflow-x: auto; border-bottom: 1px solid var(--line); }
+.mk-tabs { display: flex; gap: 4px; padding: 10px 14px 0; overflow-x: auto; overflow-y: hidden; box-shadow: inset 0 -1px 0 var(--line); }
 .mk-tab { font: 500 13px var(--ui); background: transparent; color: var(--muted); border: 1px solid transparent; border-bottom: 0; border-radius: 6px 6px 0 0; padding: 7px 12px; cursor: pointer; white-space: nowrap; display: inline-flex; gap: 8px; align-items: center; }
-.mk-tab[aria-selected="true"] { background: var(--bg); color: var(--ink); border-color: var(--line); font-weight: 700; margin-bottom: -1px; }
+.mk-tab[aria-selected="true"] { background: var(--bg); color: var(--ink); border-color: var(--line); font-weight: 700; }
 .mk-tab .n { font: 500 11px var(--mono); color: var(--accent); }
 .mk-sheet { overflow: auto; max-height: 440px; background: var(--bg); }
 .mk-sheet table { min-width: 100%; width: auto; border-collapse: collapse; font-size: 13.5px; }
@@ -308,6 +316,8 @@ tr.is-opened td:not(.act) { color: var(--muted); }
 .mk-empty { padding: 28px; color: var(--muted); text-align: center; }
 .mk-cap { padding: 10px 16px; font-size: 12.5px; color: var(--muted); border-top: 1px solid var(--line); }
 @media (max-width: 520px) {
+  .views { gap: 0; }
+  .vt { padding: 10px 9px; font-size: 13px; }
   .mk-actions { width: 100%; }
   .mk-actions .btn { flex: 1; }
 }
@@ -315,6 +325,7 @@ tr.is-opened td:not(.act) { color: var(--muted); }
 /* Extract links */
 .ex-text { font: 400 12.5px var(--mono); resize: vertical; min-height: 170px; line-height: 1.55; }
 .ex-opts { display: flex; flex-wrap: wrap; gap: 8px 22px; }
+.ex-limit { display: flex; align-items: center; gap: 8px; margin-top: -6px; padding: 8px 12px; border: 1px solid var(--warn); border-radius: 8px; background: var(--warn-soft); color: var(--warn); font: 600 12.5px var(--ui); }
 .ex-or { display: flex; align-items: center; gap: 12px; color: var(--muted); font-size: 12.5px; }
 .ex-or::before, .ex-or::after { content: ""; flex: 1; height: 1px; background: var(--line); }
 .ex-ctx { max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
@@ -323,6 +334,23 @@ tr.is-opened td:not(.act) { color: var(--muted); }
 .ex-src.link { background: var(--accent-soft); color: var(--accent); }
 .ex-busy { padding: 10px 16px; color: var(--muted); font-size: 13px; border-bottom: 1px solid var(--line); }
 .ex-note { padding: 10px 16px; border-bottom: 1px solid var(--line); font-size: 12.5px; color: var(--warn); background: var(--warn-soft); }
+
+/* Link Cleaner */
+.cl-query { max-width: 460px; }
+.cl-foot { border-top: 1px solid var(--line); border-bottom: 0; justify-content: space-between; }
+.cl-chip { display: inline-block; font: 500 11px var(--mono); padding: 1px 7px; border-radius: 5px; background: var(--accent-soft); color: var(--accent); margin: 1px 4px 1px 0; white-space: nowrap; }
+.cl-same { color: var(--muted); font-size: 12.5px; }
+.cl-orig { max-width: 280px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 400 12px var(--mono); color: var(--muted); }
+.cl-st { display: inline-block; font: 600 11.5px var(--ui); border-radius: 999px; padding: 2px 10px; background: var(--sunken); color: var(--muted); white-space: nowrap; }
+.cl-st.ok { background: var(--ok-soft); color: var(--ok); }
+.cl-st.bad { background: var(--warn-soft); color: var(--warn); }
+.cl-rej { border-top: 1px solid var(--line); padding: 10px 16px; }
+.cl-rej summary { cursor: pointer; font-weight: 600; font-size: 13px; }
+.cl-rej ul { list-style: none; margin: 10px 0 0; padding: 0; max-height: 220px; overflow-y: auto; border: 1px solid var(--line); border-radius: 8px; }
+.cl-rej li { display: flex; gap: 12px; justify-content: space-between; align-items: baseline; padding: 6px 12px; border-bottom: 1px solid var(--line); min-width: 0; }
+.cl-rej li:last-child { border-bottom: 0; }
+.cl-rej li span:first-child { font: 400 12px var(--mono); overflow-wrap: anywhere; min-width: 0; }
+.cl-rej li span:last-child { color: var(--warn); font-size: 12.5px; white-space: nowrap; }
 </style>
 
 <div class="page">
@@ -335,7 +363,7 @@ tr.is-opened td:not(.act) { color: var(--muted); }
       </svg>
       <div>
         <h1>LinkDesk</h1>
-        <p>Make spreadsheet links clickable, then open them in batches</p>
+        <p id="tagline">Open spreadsheet links in batches</p>
       </div>
     </div>
     <div class="top-actions"><span class="top-actions" id="topTools">
@@ -349,6 +377,7 @@ tr.is-opened td:not(.act) { color: var(--muted); }
     <button class="vt" type="button" role="tab" id="tab-maker" data-view="maker" aria-selected="false" aria-controls="view-maker">Make links</button>
     <button class="vt" type="button" role="tab" id="tab-batch" data-view="batch" aria-selected="true" aria-controls="view-batch">Open in batches</button>
     <button class="vt" type="button" role="tab" id="tab-extract" data-view="extract" aria-selected="false" aria-controls="view-extract">Extract links</button>
+    <button class="vt" type="button" role="tab" id="tab-clean" data-view="clean" aria-selected="false" aria-controls="view-clean">Link Cleaner</button>
   </nav>
 
   <div class="view" id="view-batch" role="tabpanel" aria-labelledby="tab-batch">
@@ -483,7 +512,7 @@ tr.is-opened td:not(.act) { color: var(--muted); }
       </div>
       <div class="field">
         <label for="exText">Paste text from a syllabus, article, email or notes</label>
-        <textarea class="ex-text" id="exText" spellcheck="false"></textarea>
+        <textarea class="ex-text" id="exText" spellcheck="false" placeholder="Paste your text here, such as a syllabus, article, email or notes.&#10;&#10;Note: every web address in it is listed below, so you can copy it, download it or send it to batches."></textarea>
       </div>
       <div class="ex-or">or</div>
       <label class="drop" id="exDrop">
@@ -492,6 +521,7 @@ tr.is-opened td:not(.act) { color: var(--muted); }
         <strong id="exDropTitle">Drop a Word or PDF file or browse</strong>
         <small>.docx, .pdf, .txt, .md, .html. The file stays in your browser.</small>
       </label>
+      <p class="ex-limit" role="note"><span data-ic="warn"></span>Maximum file size is 100 MB per file.</p>
       <div class="ex-opts">
         <label class="check"><input type="checkbox" id="exDedupe" checked><span>Remove duplicates</span></label>
         <label class="check"><input type="checkbox" id="exRepair" checked><span>Join links split across lines</span></label>
@@ -507,6 +537,7 @@ tr.is-opened td:not(.act) { color: var(--muted); }
           <div class="mk-count" id="exCount"></div>
         </div>
         <div class="mk-actions">
+          <button class="btn" type="button" id="exClean" disabled>Clean these links</button>
           <button class="btn" type="button" id="exCopy" disabled><span data-ic="copy"></span>Copy links</button>
           <button class="btn" type="button" id="exXlsx" disabled>Download .xlsx</button>
           <button class="btn primary" type="button" id="exSend" disabled><span data-ic="arrow"></span>Send to batches</button>
@@ -522,6 +553,84 @@ tr.is-opened td:not(.act) { color: var(--muted); }
       </div>
       <div class="more" id="exMoreWrap" hidden><button class="btn" id="exMore" type="button">Show more</button></div>
       <div class="mk-cap" id="exCap"></div>
+    </section>
+  </div>
+
+  <div class="view" id="view-clean" role="tabpanel" aria-labelledby="tab-clean" hidden>
+    <section class="card" aria-labelledby="h-cl">
+      <div class="card-head">
+        <span class="step">1</span>
+        <h2 id="h-cl">Paste messy links</h2>
+        <span class="chip" id="clChip" hidden></span>
+      </div>
+      <div class="field">
+        <label for="clText">One link per line, or any text that contains links</label>
+        <textarea class="ex-text" id="clText" spellcheck="false" placeholder="Paste your links here, one per line.&#10;&#10;Note: tracking codes and redirect wrappers are removed, and so is everything after the ? when the page does not need it."></textarea>
+      </div>
+      <div class="ex-or">or</div>
+      <label class="drop" id="clDrop">
+        <input class="sr" type="file" id="clFile" accept=".txt,.csv,.md,.html,.htm,.xlsx,.xls,.ods">
+        <span class="drop-ic" data-ic="upload"></span>
+        <strong id="clDropTitle">Drop a spreadsheet or text file or browse</strong>
+        <small>.xlsx, .xls, .csv, .txt, .md, .html. The file stays in your browser.</small>
+      </label>
+      <p class="ex-limit" role="note"><span data-ic="warn"></span>Maximum file size is 100 MB per file.</p>
+      <div class="field cl-query">
+        <label for="clQuery">Everything after the ? in a link</label>
+        <select id="clQuery">
+          <option value="smart" selected>Remove it unless the page needs it (recommended)</option>
+          <option value="all">Always remove it</option>
+          <option value="tracking">Remove tracking codes only</option>
+          <option value="keep">Keep it all</option>
+        </select>
+        <span class="hint">Example: x.com/user/status/123?a=abc becomes x.com/user/status/123. Search pages, YouTube videos and .php or .aspx pages keep what they need.</span>
+      </div>
+      <div class="ex-opts">
+        <label class="check"><input type="checkbox" id="clWrap" checked><span>Unwrap redirect links (Google, Facebook, Outlook)</span></label>
+        <label class="check"><input type="checkbox" id="clDedupe" checked><span>Remove duplicates</span></label>
+        <label class="check"><input type="checkbox" id="clBare" checked><span>Also clean bare domains such as <code>example.com</code></span></label>
+        <label class="check"><input type="checkbox" id="clAnchor"><span>Remove <code>#anchors</code></span></label>
+        <label class="check"><input type="checkbox" id="clSlash"><span>Remove trailing slash</span></label>
+        <label class="check"><input type="checkbox" id="clHttps"><span>Change <code>http</code> to <code>https</code></span></label>
+      </div>
+    </section>
+
+    <section class="table-card" aria-labelledby="h-cl2" aria-live="polite">
+      <div class="tbar">
+        <div class="mk-sum">
+          <h2 id="h-cl2" class="sr">Clean links</h2>
+          <div class="mk-file" id="clFileLine"></div>
+          <div class="mk-count" id="clCount"></div>
+          <div class="hint" id="clSub"></div>
+        </div>
+        <div class="mk-actions">
+          <button class="btn" type="button" id="clCheck" disabled>Check they respond</button>
+          <button class="btn" type="button" id="clCopy" disabled><span data-ic="copy"></span>Copy links</button>
+          <button class="btn" type="button" id="clXlsx" disabled>Download .xlsx</button>
+          <button class="btn primary" type="button" id="clSend" disabled><span data-ic="arrow"></span>Send to batches</button>
+        </div>
+      </div>
+      <div id="clBusy" class="ex-busy" hidden></div>
+      <div id="clNote" class="ex-note" hidden></div>
+      <div class="scroll">
+        <table>
+          <thead><tr><th>#</th><th>Original</th><th>Clean link</th><th>What was removed</th><th>Status</th><th style="text-align:right">Actions</th></tr></thead>
+          <tbody id="clRows"></tbody>
+        </table>
+      </div>
+      <div class="more" id="clMoreWrap" hidden><button class="btn" id="clMore" type="button">Show more</button></div>
+      <div class="mk-cap" id="clCap"></div>
+      <div class="tbar cl-foot" id="clFoot" hidden>
+        <span class="hint">Finished cleaning? Take all the links with you.</span>
+        <div class="mk-actions">
+          <button class="btn" type="button" id="clCopy2"><span data-ic="copy"></span>Copy all links</button>
+          <button class="btn primary" type="button" id="clXlsx2">Download Excel (.xlsx)</button>
+        </div>
+      </div>
+      <details class="cl-rej" id="clRejWrap" hidden>
+        <summary id="clRejSum"></summary>
+        <ul id="clRejList"></ul>
+      </details>
     </section>
   </div>
 </div>
@@ -543,7 +652,30 @@ tr.is-opened td:not(.act) { color: var(--muted); }
 
 <div id="toasts" aria-live="polite"></div>
 
-<script>var LD = {};</script>
+<script>
+/* File safety limits, shared by all three tools */
+var LD = {
+  MAX_FILE: 100 * 1024 * 1024,
+  MAX_LINKS: 5000,
+  MAX_CELLS: 1000000,
+  MAX_TEXT: 2000000,
+  MAX_PDF_PAGES: 300,
+  MAX_ZIP_ENTRIES: 2000,
+  MAX_PART_CHARS: 15000000,
+  checkFile: function (f) {
+    return f && f.size > LD.MAX_FILE ? 'That file is ' + (f.size / 1048576).toFixed(1) + ' MB. The limit is 100 MB.' : '';
+  },
+  checkCells: function (wb) {
+    wb.SheetNames.forEach(function (n) {
+      var ws = wb.Sheets[n];
+      if (ws && ws['!ref']) {
+        var r = XLSX.utils.decode_range(ws['!ref']);
+        if ((r.e.r - r.s.r + 1) * (r.e.c - r.s.c + 1) > LD.MAX_CELLS) throw new Error('big');
+      }
+    });
+  }
+};
+</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
 (function () {
@@ -600,6 +732,7 @@ tr.is-opened td:not(.act) { color: var(--muted); }
     try {
       var p = JSON.parse(raw);
       if (!p || !Array.isArray(p.items)) return false;
+      if (p.source && p.source.sample) return false;
       S.raw = Array.isArray(p.raw) ? p.raw : [];
       S.items = p.items;
       S.size = Math.min(100, Math.max(1, parseInt(p.size, 10) || 20));
@@ -680,8 +813,11 @@ tr.is-opened td:not(.act) { color: var(--muted); }
       var was = Object.prototype.hasOwnProperty.call(prev, key);
       out.push({ url: url, label: r.label || ('Row ' + (r.row || idx + 1)), opened: was, at: was ? prev[key] : null });
     });
+    var capped = out.length > LD.MAX_LINKS;
+    if (capped) out = out.slice(0, LD.MAX_LINKS);
     S.raw = raw; S.items = out; S.batchFilter = 'all'; S.limit = 150; S.manual = [];
     save(); renderAll();
+    if (capped) toast('Only the first ' + LD.MAX_LINKS.toLocaleString() + ' links were kept.', 'warn');
     return skipped;
   }
 
@@ -691,17 +827,21 @@ tr.is-opened td:not(.act) { color: var(--muted); }
   }
   function readFile(file) {
     if (typeof XLSX === 'undefined') { toast('The spreadsheet reader did not load. Use Paste links instead.', 'warn'); return; }
+    var tooBig = LD.checkFile(file);
+    if (tooBig) { toast(tooBig, 'warn'); return; }
     var r = new FileReader();
     r.onload = function (e) {
       try {
         WB = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
+        LD.checkCells(WB);
         var sel = $('sheetSel');
         sel.innerHTML = WB.SheetNames.map(function (n) { return '<option value="' + esc(n) + '">' + esc(n) + '</option>'; }).join('');
         S.source = { name: file.name, sample: false };
         $('cfg').hidden = false;
         onSheetChange();
       } catch (err) {
-        toast('That file could not be read. Use a valid .xlsx, .xls or .csv file.', 'warn');
+        WB = null;
+        toast(err && err.message === 'big' ? 'That spreadsheet is too large. The limit is 1,000,000 cells.' : 'That file could not be read. Use a valid .xlsx, .xls or .csv file.', 'warn');
       }
     };
     r.readAsArrayBuffer(file);
@@ -797,7 +937,9 @@ tr.is-opened td:not(.act) { color: var(--muted); }
     applyRaw(raw, false);
   }
   function importPasted() {
-    var lines = $('pasteTa').value.split(/\r?\n/);
+    var txt = $('pasteTa').value;
+    if (txt.length > LD.MAX_TEXT) { txt = txt.slice(0, LD.MAX_TEXT); toast('The pasted text was very long. Only the first 2 million characters were read.', 'warn'); }
+    var lines = txt.split(/\r?\n/);
     var add = [];
     lines.forEach(function (line, idx) {
       var parts = line.split('\t').map(function (s) { return s.trim(); }).filter(Boolean);
@@ -1067,7 +1209,7 @@ tr.is-opened td:not(.act) { color: var(--muted); }
   function init() {
     hydrateIcons();
     var t = LS.get(THEME);
-    if (t === 'dark' || t === 'light') document.documentElement.setAttribute('data-theme', t);
+    document.documentElement.setAttribute('data-theme', t === 'dark' ? 'dark' : 'light');
     paintThemeIcon();
 
     $('btnTheme').addEventListener('click', function () {
@@ -1115,7 +1257,8 @@ tr.is-opened td:not(.act) { color: var(--muted); }
       if (e.altKey && (e.key === 'o' || e.key === 'O') && !$('view-batch').hidden) { e.preventDefault(); openNext(); }
     });
 
-    if (!load()) loadSample(); else renderAll();
+    load();
+    renderAll();
   }
   function importFromMaker(raw, name) {
     WB = null; $('cfg').hidden = true;
@@ -1139,7 +1282,7 @@ tr.is-opened td:not(.act) { color: var(--muted); }
   var MAIL_RE = /^mailto:[^\s]+$/i;
   var BARE_RE = /^(?:[a-z0-9-]+\.)+(?:com|org|net|edu|gov|int|info|news|io|co|in|uk|us|ca|au|de|fr|ac)(?:\/\S*)?$/i;
   var LSV = 'linkdesk_view';
-  var M = { buf: null, name: '', example: true, wb: null, stats: null, sheet: 0, downloads: null };
+  var M = { buf: null, name: '', example: false, wb: null, stats: null, sheet: 0, downloads: null };
 
   function plural(n, w) { return n + ' ' + w + (n === 1 ? '' : 's'); }
 
@@ -1175,13 +1318,12 @@ tr.is-opened td:not(.act) { color: var(--muted); }
   function exampleWorkbook() {
     var rows = [
       ['Outlet', 'Section', 'Address'],
-      ['BBC News', 'World', 'https://www.bbc.com/news/world'],
       ['The Hindu', 'National', 'https://www.thehindu.com/news/national/'],
-      ['Reuters', 'India', 'www.reuters.com/world/india/'],
+      ['OpIndia', 'News', 'www.opindia.com'],
       ['WHO', 'Newsroom', 'https://www.who.int/news'],
       ['Press Information Bureau', 'Releases', 'https://pib.gov.in'],
-      ['UNESCO', 'Media', 'unesco.org/en/media-information'],
-      ['Press Council of India', 'Home', 'https://presscouncil.nic.in'],
+      ['Swarajya', 'Magazine', 'swarajyamag.com'],
+      ['The Indian Express', 'India', 'https://indianexpress.com/section/india/'],
       ['Editor\'s desk', 'Email', 'mailto:desk@example.com']
     ];
     var wb = XLSX.utils.book_new();
@@ -1215,9 +1357,23 @@ tr.is-opened td:not(.act) { color: var(--muted); }
     return out;
   }
 
+  function renderEmpty() {
+    M.wb = null; M.stats = null;
+    $('mChip').hidden = true;
+    $('mFileLine').textContent = '';
+    $('mCountLine').textContent = 'No file loaded yet';
+    $('mHint').className = 'hint mk-hint';
+    $('mHint').textContent = 'Note: choose an Excel or CSV file above. Every plain-text web address in it becomes a clickable link. Then you can download the new file or send the links to batches.';
+    $('mDl').disabled = true; $('mSend').disabled = true;
+    $('mTabs').innerHTML = '';
+    $('mSheet').innerHTML = '<div class="mk-empty">Your converted sheet will appear here.</div>';
+    $('mCap').textContent = '';
+  }
   function build() {
     var bare = $('mBare').checked;
-    var wb = M.buf ? XLSX.read(M.buf, { type: 'array' }) : exampleWorkbook();
+    if (!M.buf) { renderEmpty(); return; }
+    var wb = XLSX.read(M.buf, { type: 'array' });
+    LD.checkCells(wb);
     M.wb = wb; M.stats = convert(wb, bare);
     if (M.sheet >= wb.SheetNames.length) M.sheet = 0;
     render();
@@ -1296,13 +1452,15 @@ tr.is-opened td:not(.act) { color: var(--muted); }
   function loadFile(file) {
     if (!file) return;
     if (typeof XLSX === 'undefined') { $('mHint').textContent = 'The spreadsheet reader did not load. Reload the page.'; return; }
+    var tooBig = LD.checkFile(file);
+    if (tooBig) { $('mHint').className = 'hint mk-hint warn'; $('mHint').textContent = tooBig; return; }
     file.arrayBuffer().then(function (buf) {
       M.buf = buf; M.name = file.name; M.example = false; M.sheet = 0;
       $('mDropTitle').textContent = file.name + '. Choose another file to replace it.';
       try { build(); } catch (e) {
         M.buf = null; M.example = true; build();
         $('mHint').className = 'hint mk-hint warn';
-        $('mHint').textContent = 'That file could not be read. Check that it is a real Excel or CSV file.';
+        $('mHint').textContent = e && e.message === 'big' ? 'That spreadsheet is too large. The limit is 1,000,000 cells.' : 'That file could not be read. Check that it is a real Excel or CSV file.';
       }
     });
   }
@@ -1352,18 +1510,26 @@ tr.is-opened td:not(.act) { color: var(--muted); }
   });
 
   /* view switching */
+  var TAGS = {
+    maker: 'Make spreadsheet links clickable',
+    extract: 'Extract links from text, Word and PDF files',
+    clean: 'Remove tracking codes and wrappers, keep clean links',
+    batch: 'Open spreadsheet links in batches'
+  };
   function show(v) {
-    if (v !== 'maker' && v !== 'extract') v = 'batch';
+    if (v !== 'maker' && v !== 'extract' && v !== 'clean') v = 'batch';
     $('view-maker').hidden = v !== 'maker';
     $('view-extract').hidden = v !== 'extract';
+    $('view-clean').hidden = v !== 'clean';
     $('view-batch').hidden = v !== 'batch';
     $('topTools').hidden = v !== 'batch';
+    $('tagline').textContent = TAGS[v];
     document.querySelectorAll('.vt').forEach(function (b) { b.setAttribute('aria-selected', String(b.getAttribute('data-view') === v)); });
     try { localStorage.setItem(LSV, v); } catch (e) {}
   }
   document.querySelectorAll('.vt').forEach(function (b) { b.addEventListener('click', function () { show(b.getAttribute('data-view')); }); });
   var start = 'batch';
-  try { var sv = localStorage.getItem(LSV); if (sv === 'maker' || sv === 'extract') start = sv; } catch (e) {}
+  try { var sv = localStorage.getItem(LSV); if (sv === 'maker' || sv === 'extract' || sv === 'clean') start = sv; } catch (e) {}
   LD.show = show;
   show(start);
 
@@ -1386,24 +1552,8 @@ tr.is-opened td:not(.act) { color: var(--muted); }
   var PDFWORKER = CDN + 'pdf.js/3.11.174/pdf.worker.min.js';
   var URL_RE = /(?:https?:\/\/|www\.)[^\s<>"'`]+/gi;
   var BARE_RE = /(?<![@\w.\/-])(?:[a-z0-9-]+\.)+(?:com|org|net|edu|gov|int|info|news|io|co|in|uk|us|ca|au|de|fr|ac)(?![\w-])(?:\/[^\s<>"'`]*)?/gi;
-  var SAMPLE = [
-    'JOUR 201 Reporting and Writing. Reading list',
-    '',
-    'Week 1. What counts as news',
-    'Poynter, reporting and editing guides: https://www.poynter.org/reporting-editing/',
-    'Reuters, handbook of journalism - www.reuters.com/',
-    '',
-    'Week 2. Sources and attribution',
-    'Press Information Bureau releases (https://pib.gov.in).',
-    'Press Council of India: https://presscouncil.nic.in/',
-    '',
-    'Week 3. Data and verification',
-    'First Draft verification guide https://firstdraftnews.org/long-form-article/',
-    'Same list again for reference: https://www.poynter.org/reporting-editing/',
-    'Send questions to the desk at desk@example.com'
-  ].join('\n');
 
-  var E = { items: [], name: '', example: true, limit: 300, note: '', busy: '' };
+  var E = { items: [], name: '', example: false, limit: 300, note: '', busy: '' };
   var timer = null;
 
   function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;'); }
@@ -1505,6 +1655,7 @@ tr.is-opened td:not(.act) { color: var(--muted); }
   function readDocx(buf, opts) {
     return loadScript(JSZIP).then(function () { return JSZip.loadAsync(buf); }).then(function (zip) {
       var names = Object.keys(zip.files).filter(function (n) { return /^word\/(document|footnotes|endnotes|header\d*|footer\d*)\.xml$/.test(n); });
+      if (Object.keys(zip.files).length > LD.MAX_ZIP_ENTRIES) throw new Error('big');
       if (!names.length) throw new Error('nodoc');
       var all = [];
       return names.reduce(function (chain, name) {
@@ -1512,6 +1663,7 @@ tr.is-opened td:not(.act) { color: var(--muted); }
           var base = name.split('/').pop();
           var relName = 'word/_rels/' + base + '.rels';
           return Promise.all([zip.file(name).async('string'), zip.file(relName) ? zip.file(relName).async('string') : Promise.resolve('')]).then(function (r) {
+            if (r[0].length > LD.MAX_PART_CHARS) throw new Error('big');
             var rels = {};
             if (r[1]) {
               var rd = new DOMParser().parseFromString(r[1], 'application/xml').getElementsByTagName('Relationship');
@@ -1552,7 +1704,8 @@ tr.is-opened td:not(.act) { color: var(--muted); }
       return pdfjsLib.getDocument({ data: new Uint8Array(buf) }).promise;
     }).then(function (pdf) {
       var all = [], chars = 0, pages = [];
-      for (var n = 1; n <= pdf.numPages; n++) pages.push(n);
+      var lastPage = Math.min(pdf.numPages, LD.MAX_PDF_PAGES);
+      for (var n = 1; n <= lastPage; n++) pages.push(n);
       return pages.reduce(function (chain, n) {
         return chain.then(function () {
           return pdf.getPage(n).then(function (page) {
@@ -1574,25 +1727,33 @@ tr.is-opened td:not(.act) { color: var(--muted); }
             });
           });
         });
-      }, Promise.resolve()).then(function () { return { items: all, chars: chars }; });
+      }, Promise.resolve()).then(function () { return { items: all, chars: chars, pages: pdf.numPages }; });
     });
   }
 
   /* ---------- running an extraction ---------- */
   function opts() { return { dedupe: $('exDedupe').checked, repair: $('exRepair').checked, bare: $('exBare').checked }; }
   function setItems(items, name, example, note) {
-    E.items = items; E.name = name; E.example = example; E.limit = 300; E.note = note || ''; E.busy = '';
+    note = note || '';
+    if (items.length > LD.MAX_LINKS) {
+      items = items.slice(0, LD.MAX_LINKS);
+      note = (note ? note + ' ' : '') + 'Only the first ' + LD.MAX_LINKS.toLocaleString() + ' links are kept.';
+    }
+    E.items = items; E.name = name; E.example = example; E.limit = 300; E.note = note; E.busy = '';
     render();
   }
   function runText() {
     var o = opts();
-    var items = finish(fromText($('exText').value, function (i) { return 'Line ' + (i + 1); }, o), o);
-    var isSample = $('exText').value === SAMPLE;
-    setItems(items, isSample ? 'Example text' : 'Pasted text', isSample, '');
+    var text = $('exText').value, cut = '';
+    if (text.length > LD.MAX_TEXT) { text = text.slice(0, LD.MAX_TEXT); cut = 'The text was very long. Only the first 2 million characters were read.'; }
+    var items = finish(fromText(text, function (i) { return 'Line ' + (i + 1); }, o), o);
+    setItems(items, text.trim() ? 'Pasted text' : '', false, cut);
   }
   var lastFile = null;
   function runFile(file) {
     if (!file) return;
+    var tooBig = LD.checkFile(file);
+    if (tooBig) { toast(tooBig, 'warn'); return; }
     lastFile = file;
     var name = file.name, ext = (name.split('.').pop() || '').toLowerCase();
     var o = opts();
@@ -1602,7 +1763,8 @@ tr.is-opened td:not(.act) { color: var(--muted); }
     var job;
     if (ext === 'docx') job = file.arrayBuffer().then(function (b) { return readDocx(b, o); }).then(function (items) { return { items: items, note: '' }; });
     else if (ext === 'pdf') job = file.arrayBuffer().then(function (b) { return readPdf(b, o); }).then(function (r) {
-      return { items: r.items, note: r.chars < 20 ? 'This PDF has no selectable text. It is probably a scan, so no links can be read from it.' : 'Long addresses in PDFs can break at line ends. Check the list before you rely on it.' };
+      var cut = r.pages > LD.MAX_PDF_PAGES ? 'Only the first ' + LD.MAX_PDF_PAGES + ' of ' + r.pages + ' pages were read. ' : '';
+      return { items: r.items, note: cut + (r.chars < 20 ? 'This PDF has no selectable text. It is probably a scan, so no links can be read from it.' : 'Long addresses in PDFs can break at line ends. Check the list before you rely on it.') };
     });
     else job = file.text().then(function (t) { return { items: fromText(t, function (i) { return 'Line ' + (i + 1); }, o), note: '' }; });
     job.then(function (r) {
@@ -1610,6 +1772,7 @@ tr.is-opened td:not(.act) { color: var(--muted); }
       setItems(finish(r.items, o), name, false, r.note);
     }).catch(function (err) {
       E.busy = ''; render();
+      if (err && err.message === 'big') { toast('That document is too large or complex to read safely.', 'warn'); return; }
       toast(ext === 'docx' ? 'That Word file could not be read. Check that it is a .docx file.' : ext === 'pdf' ? 'That PDF could not be read. Check that the file is not damaged or locked.' : 'That file could not be read.', 'warn');
     });
   }
@@ -1618,18 +1781,17 @@ tr.is-opened td:not(.act) { color: var(--muted); }
   function visible() { return E.items; }
   function render() {
     var n = E.items.length;
-    var chip = $('exChip'); chip.hidden = false;
-    chip.textContent = E.example ? 'Example text' : E.name;
-    chip.className = 'chip' + (E.example ? ' sample' : '');
-    $('exFileLine').textContent = E.example ? 'Sample text. Paste or add your own to replace it.' : E.name;
+    var chip = $('exChip'); chip.hidden = !E.name;
+    chip.textContent = E.name; chip.className = 'chip';
+    $('exFileLine').textContent = E.name;
     var links = E.items.filter(function (i) { return i.src === 'link'; }).length;
-    $('exCount').textContent = plural(n, 'link') + ' found' + (links && n ? ' (' + links + ' from clickable text)' : '');
-    ['exCopy', 'exXlsx', 'exSend'].forEach(function (id) { $(id).disabled = !n; });
+    $('exCount').textContent = !E.name ? 'No links yet' : plural(n, 'link') + ' found' + (links && n ? ' (' + links + ' from clickable text)' : '');
+    ['exCopy', 'exXlsx', 'exSend', 'exClean'].forEach(function (id) { $(id).disabled = !n; });
     var busy = $('exBusy'); busy.hidden = !E.busy; busy.textContent = E.busy;
     var note = $('exNote'); note.hidden = !E.note; note.textContent = E.note;
     var body = $('exRows');
     if (!n) {
-      body.innerHTML = '<tr><td colspan="6" class="none">' + (E.busy ? 'Reading the document...' : 'No links found. Paste text that contains web addresses, or add a document.') + '</td></tr>';
+      body.innerHTML = '<tr><td colspan="6" class="none">' + (E.busy ? 'Reading the document...' : E.name ? 'No links found. Check that the text contains web addresses, or try another file.' : 'Note: paste text above or add a Word or PDF file. Every web address in it, including links hidden behind clickable words, appears here.') + '</td></tr>';
       $('exMoreWrap').hidden = true; $('exCap').textContent = ''; return;
     }
     var html = '', shown = Math.min(n, E.limit);
@@ -1662,6 +1824,7 @@ tr.is-opened td:not(.act) { color: var(--muted); }
       });
     }, fallback);
   }
+  LD.saveBlob = saveBlob;
   $('exXlsx').addEventListener('click', function () {
     if (!E.items.length || typeof XLSX === 'undefined') return;
     var aoa = [['#', 'Found in', 'Title', 'Link']];
@@ -1682,6 +1845,11 @@ tr.is-opened td:not(.act) { color: var(--muted); }
     LD.send(toRaw(), E.example ? 'Example text' : E.name);
     LD.show('batch');
   });
+  $('exClean').addEventListener('click', function () {
+    if (!E.items.length || !LD.cleanLoad) return;
+    LD.cleanLoad(E.items.map(function (i) { return i.url; }).join('\n'), E.example ? 'Example text' : E.name);
+    LD.show('clean');
+  });
   $('exMore').addEventListener('click', function () { E.limit += 300; render(); });
   $('exRows').addEventListener('click', function (e) {
     var b = e.target.closest && e.target.closest('[data-rm]');
@@ -1698,9 +1866,404 @@ tr.is-opened td:not(.act) { color: var(--muted); }
   ['dragleave', 'drop'].forEach(function (ev) { drop.addEventListener(ev, function (e) { e.preventDefault(); drop.classList.remove('over'); }); });
   drop.addEventListener('drop', function (e) { runFile(e.dataTransfer.files[0]); });
 
-  $('exText').value = SAMPLE;
   runText();
 })();
 </script>
 </body>
 </html>
+
+<script>
+(function () {
+  'use strict';
+  var $ = function (id) { return document.getElementById(id); };
+  function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;'); }
+  function plural(n, w) { return n + ' ' + w + (n === 1 ? '' : 's'); }
+  function toast(m, t) { if (window.LD && LD.toast) LD.toast(m, t); }
+
+  var URL_RE = /(?:https?:\/\/|www\.)[^\s<>"'`]+/gi;
+  var BARE_RE = /(?<![@\w.\/-])(?:[a-z0-9-]+\.)+(?:com|org|net|edu|gov|int|info|news|io|co|in|uk|us|ca|au|de|fr|ac)(?![\w-])(?:\/[^\s<>"'`]*)?/gi;
+
+  /* ---------- rules ---------- */
+  var TRACK = ('fbclid gclid dclid gbraid wbraid msclkid yclid twclid ttclid li_fat_id igshid igsh mc_cid mc_eid _hsenc _hsmi hsctatracking ' +
+    'mkt_tok vero_id ref_src ref_url s_cid ocid ncid spm sr_share rb_clickid _openstat wickedid __twitter_impression gclsrc _ga _gl mibextid').split(' ');
+  var TRACK_PREFIX = ['utm_', 'pk_', 'mtm_', 'hsa_', 'oly_', 'vero_', '_hs', 'mc_', 'fb_', 'matomo_', 'piwik_'];
+  var HOST_RULES = [
+    { h: /(^|\.)youtube\.com$|^youtu\.be$/, p: ['si', 'feature', 'pp', 'kw'] },
+    { h: /(^|\.)spotify\.com$/, p: ['si', 'context', 'nd', 'dlsi'] },
+    { h: /^(www\.|mobile\.)?(x|twitter)\.com$/, p: ['s', 't'] },
+    { h: /(^|\.)amazon\.[a-z.]+$|^amzn\.to$/, p: ['ref', 'ref_', 'tag', 'linkcode', 'linkid', 'qid', 'sr', 'crid', 'sprefix', 'dib', 'dib_tag', 'content-id', 'smid'], prefix: ['pd_rd_', 'pf_rd_'] },
+    { h: /(^|\.)linkedin\.com$/, p: ['trackingid', 'trk', 'lipi', 'midtoken', 'midsig', 'trkemail', 'eid', 'otptoken', 'refid', 'originalsubdomain'] },
+    { h: /(^|\.)facebook\.com$|^fb\.watch$/, p: ['ref', 'refsrc', 'sfnsn', '_rdr', 'rdid'], prefix: ['__cft__', '__tn__'] },
+    { h: /(^|\.)instagram\.com$/, p: ['igshid', 'igsh', 'img_index'] }
+  ];
+  var WRAP = [
+    { h: /(^|\.)google\.[a-z.]+$/, p: /^\/url$/, k: ['url', 'q'] },
+    { h: /^(l|lm)\.facebook\.com$/, p: /^\/l\.php$/, k: ['u'] },
+    { h: /^(www\.)?facebook\.com$/, p: /^\/flx\/warn\/?$/, k: ['u'] },
+    { h: /^l\.instagram\.com$/, p: /^\/$/, k: ['u'] },
+    { h: /^l\.messenger\.com$/, p: /^\/l\.php$/, k: ['u'] },
+    { h: /\.safelinks\.protection\.outlook\.com$/, p: /./, k: ['url'] },
+    { h: /(^|\.)youtube\.com$/, p: /^\/redirect$/, k: ['q'] },
+    { h: /(^|\.)linkedin\.com$/, p: /^\/safety\/go/, k: ['url'] },
+    { h: /^duckduckgo\.com$/, p: /^\/l\/?$/, k: ['uddg'] },
+    { h: /^out\.reddit\.com$/, p: /./, k: ['url'] },
+    { h: /^t\.umblr\.com$/, p: /^\/redirect$/, k: ['z'] }
+  ];
+
+
+  var C = { items: [], rejected: [], dups: 0, name: '', example: true, limit: 300, note: '', busy: '', checked: false, token: 0, lastFile: null };
+  var timer = null;
+
+  /* ---------- cleaning ---------- */
+  function cleanUrl(u) {
+    u = u.replace(/[.,;:!?'"\]}>…”’]+$/, '');
+    while (/\)$/.test(u) && (u.match(/\(/g) || []).length < (u.match(/\)/g) || []).length) u = u.replace(/\)$/, '');
+    return u.replace(/[.,;:!?'"\]}>…”’]+$/, '');
+  }
+  function badHost(h) {
+    if (h.charAt(0) === '[' || h.indexOf(':') > -1) return 'Local address';
+    if (h === 'localhost' || /\.(local|localhost|internal|lan|invalid|test)$/.test(h)) return 'Local address';
+    var ip = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/.exec(h);
+    if (ip) {
+      var a = +ip[1], b = +ip[2];
+      if (a === 10 || a === 127 || a === 0 || (a === 192 && b === 168) || (a === 172 && b >= 16 && b <= 31) || (a === 169 && b === 254)) return 'Local address';
+      return '';
+    }
+    if (h.indexOf('.') === -1) return 'Not a valid domain';
+    var tld = h.split('.').pop();
+    if (!/^(?:[a-z]{2,}|xn--[a-z0-9-]+)$/.test(tld)) return 'Not a valid domain';
+    return '';
+  }
+  function unwrapOnce(u) {
+    var host = u.hostname.toLowerCase(), i, j;
+    for (i = 0; i < WRAP.length; i++) {
+      var r = WRAP[i];
+      if (r.h.test(host) && r.p.test(u.pathname)) {
+        for (j = 0; j < r.k.length; j++) {
+          var v = u.searchParams.get(r.k[j]);
+          if (v && /^https?:\/\//i.test(v)) return v;
+        }
+      }
+    }
+    if (host === 'urldefense.com') {
+      var m = /\/v3\/__(.+?)__;/.exec(u.pathname + u.search);
+      if (m && /^https?:\/\//i.test(m[1])) return m[1];
+    }
+    return null;
+  }
+  function stripQuery(search, host, useTrack) {
+    if (!search || search === '?') return { q: '', n: 0 };
+    var extra = null;
+    HOST_RULES.forEach(function (r) { if (r.h.test(host)) extra = r; });
+    var keep = [], n = 0;
+    search.slice(1).split('&').forEach(function (p) {
+      if (!p) return;
+      var k = p.split('=')[0];
+      try { k = decodeURIComponent(k); } catch (e) {}
+      k = k.toLowerCase();
+      var bad = false;
+      if (useTrack) {
+        if (TRACK.indexOf(k) > -1) bad = true;
+        else if (TRACK_PREFIX.some(function (x) { return k.indexOf(x) === 0; })) bad = true;
+        else if (extra && ((extra.p && extra.p.indexOf(k) > -1) || (extra.prefix && extra.prefix.some(function (x) { return k.indexOf(x) === 0; })))) bad = true;
+      }
+      if (bad) n++; else keep.push(p);
+    });
+    return { q: keep.length ? '?' + keep.join('&') : '', n: n };
+  }
+  function needsQuery(host, path) {
+    if (path === '/' || path === '') return true;
+    if (/(^|\.)youtube\.com$/.test(host) && /^\/(watch|playlist|results)/.test(path)) return true;
+    if (/\.(php|aspx?|jspx?|cgi|do|ece|action|cfm)$/i.test(path)) return true;
+    var last = path.replace(/\/+$/, '').split('/').pop().toLowerCase();
+    return /^(search|results|query|find|watch|view|photo|detail|details|download|go|redirect|out|article)$/.test(last);
+  }
+  function clean(raw, o) {
+    var changes = [];
+    var s = cleanUrl(raw);
+    if (s !== raw) changes.push('Junk characters removed');
+    if (!/^https?:\/\//i.test(s)) s = 'https://' + s;
+    var u;
+    try { u = new URL(s); } catch (e) { return { ok: false, reason: 'Not a valid address' }; }
+    var bh = badHost(u.hostname.toLowerCase());
+    if (bh) return { ok: false, reason: bh };
+    if (o.wrap) {
+      var hops = 0, nx;
+      while (hops < 3 && (nx = unwrapOnce(u))) {
+        try { u = new URL(nx); } catch (e) { break; }
+        hops++;
+      }
+      if (hops) {
+        changes.push('Redirect removed');
+        bh = badHost(u.hostname.toLowerCase());
+        if (bh) return { ok: false, reason: bh };
+      }
+    }
+    var host = u.hostname.toLowerCase();
+    var sq = stripQuery(u.search, host, o.track);
+    var path = u.pathname, extra = 0;
+    if (sq.q && (o.query === 'all' || (o.query === 'smart' && !needsQuery(host, u.pathname)))) { extra = sq.q.slice(1).split('&').length; sq.q = ''; }
+    if (o.track && /(^|\.)amazon\.[a-z.]+$/.test(host)) {
+      var p2 = path.replace(/\/ref(?:=|%3D)[^\/?#]*$/i, '');
+      if (p2 !== path) { path = p2 || '/'; sq.n++; }
+    }
+    var hash = u.hash;
+    var h2 = hash.replace(/:~:text=.*$/i, '');
+    if (h2 !== hash) { hash = h2; changes.push('Text highlight removed'); }
+    if (hash === '#') hash = '';
+    if (o.anchor && hash) { hash = ''; changes.push('Anchor removed'); }
+    if (u.username || u.password) changes.push('Login details removed');
+    if (sq.n) changes.push('Tracking removed (' + sq.n + ')');
+    if (extra) changes.push('After ? removed (' + extra + ')');
+    var proto = u.protocol;
+    if (o.https && proto === 'http:') { proto = 'https:'; changes.push('Changed to https'); }
+    if (o.slash) path = path.replace(/\/+$/, '');
+    var out = proto + '//' + u.host + path + sq.q + hash;
+    return { ok: true, url: out, changes: changes };
+  }
+  function opts() {
+    var q = $('clQuery').value;
+    return { query: q, track: q !== 'keep', wrap: $('clWrap').checked, dedupe: $('clDedupe').checked, bare: $('clBare').checked,
+             anchor: $('clAnchor').checked, slash: $('clSlash').checked, https: $('clHttps').checked };
+  }
+  function findHits(line, o) {
+    var hits = [], m;
+    URL_RE.lastIndex = 0;
+    while ((m = URL_RE.exec(line))) { if (m[0].length > 6) hits.push({ s: m.index, e: m.index + m[0].length, raw: m[0] }); }
+    if (o.bare) {
+      BARE_RE.lastIndex = 0;
+      while ((m = BARE_RE.exec(line))) {
+        var s0 = m.index, e0 = s0 + m[0].length;
+        if (hits.some(function (h) { return s0 < h.e && e0 > h.s; })) continue;
+        hits.push({ s: s0, e: e0, raw: m[0] });
+      }
+    }
+    hits.sort(function (a, b) { return a.s - b.s; });
+    return hits;
+  }
+  function process(text, name, example) {
+    C.token++; C.checked = false; C.busy = ''; C.note = '';
+    var o = opts(), cut = '';
+    if (text.length > LD.MAX_TEXT) { text = text.slice(0, LD.MAX_TEXT); cut = 'The text was very long. Only the first 2 million characters were read.'; }
+    var items = [], rejected = [], dups = 0, seen = {}, capped = false;
+    text.split(/\r?\n/).forEach(function (line) {
+      var t = line.trim();
+      if (!t) return;
+      var L = t.replace(/[​-‍﻿­]/g, '').replace(/&amp;/gi, '&').replace(/hxxp/gi, 'http').replace(/\[\.\]|\(\.\)|\[dot\]/gi, '.').replace(/\[:\]/g, ':');
+      var hits = findHits(L, o);
+      if (!hits.length) { rejected.push({ orig: t, reason: 'No web address found' }); return; }
+      hits.forEach(function (h) {
+        var r = clean(h.raw, o);
+        if (!r.ok) { rejected.push({ orig: h.raw, reason: r.reason }); return; }
+        var key = r.url.toLowerCase().replace(/\/$/, '');
+        if (o.dedupe && seen[key]) { dups++; return; }
+        seen[key] = true;
+        if (items.length >= LD.MAX_LINKS) { capped = true; return; }
+        items.push({ orig: h.raw, url: r.url, changes: r.changes, state: '' });
+      });
+    });
+    C.items = items; C.rejected = rejected; C.dups = dups; C.name = name; C.example = example; C.limit = 300;
+    C.note = (cut ? cut + ' ' : '') + (capped ? 'Only the first ' + LD.MAX_LINKS.toLocaleString() + ' links are kept.' : '');
+    render();
+  }
+  function runText() {
+    var text = $('clText').value;
+    C.lastFile = null;
+    process(text, text.trim() ? 'Pasted text' : '', false);
+  }
+
+  /* ---------- files ---------- */
+  function sheetText(wb) {
+    var lines = [];
+    wb.SheetNames.forEach(function (n) {
+      var ws = wb.Sheets[n];
+      Object.keys(ws).forEach(function (k) {
+        if (k[0] === '!') return;
+        var c = ws[k];
+        if (c.l && c.l.Target) lines.push(String(c.l.Target));
+        if (c.t === 's' && c.v) lines.push(String(c.v));
+      });
+    });
+    return lines.join('\n');
+  }
+  function runFile(file) {
+    if (!file) return;
+    var tooBig = LD.checkFile(file);
+    if (tooBig) { toast(tooBig, 'warn'); return; }
+    var ext = (file.name.split('.').pop() || '').toLowerCase();
+    var job;
+    if (/^(xlsx|xls|ods)$/.test(ext)) {
+      if (typeof XLSX === 'undefined') { toast('The spreadsheet reader did not load. Reload the page.', 'warn'); return; }
+      job = file.arrayBuffer().then(function (b) { var wb = XLSX.read(b, { type: 'array' }); LD.checkCells(wb); return sheetText(wb); });
+    } else job = file.text();
+    job.then(function (text) {
+      $('clText').value = '';
+      $('clDropTitle').textContent = file.name + '. Choose another file to replace it.';
+      C.lastFileText = text;
+      process(text, file.name, false);
+      C.lastFile = { text: text, name: file.name };
+    }).catch(function (err) {
+      toast(err && err.message === 'big' ? 'That spreadsheet is too large. The limit is 1,000,000 cells.' : 'That file could not be read.', 'warn');
+    });
+  }
+
+  /* ---------- reachability ---------- */
+  function probe(url) {
+    return new Promise(function (res) {
+      var ac = new AbortController(), t = setTimeout(function () { ac.abort(); }, 8000);
+      fetch(url, { mode: 'no-cors', cache: 'no-store', credentials: 'omit', referrerPolicy: 'no-referrer', signal: ac.signal })
+        .then(function () { clearTimeout(t); res('ok'); }, function () { clearTimeout(t); res('bad'); });
+    });
+  }
+  function mixed(it) { return location.protocol === 'https:' && /^http:/i.test(it.url); }
+  function runCheck() {
+    if (!C.items.length) return;
+    var token = ++C.token;
+    C.busy = 'Testing your connection...'; C.note = ''; render();
+    probe('https://www.gstatic.com/generate_204').then(function (r) {
+      if (token !== C.token) return;
+      if (r !== 'ok') {
+        C.busy = '';
+        C.note = 'Link checking is not available in this view because the page cannot reach other websites. Open LinkDesk in its own browser tab, for example on your Vercel site, to use it.';
+        render(); return;
+      }
+      C.items.forEach(function (it) { it.state = mixed(it) ? 'unknown' : ''; });
+      var list = C.items.filter(function (it) { return !mixed(it); });
+      var total = list.length, i = 0, done = 0;
+      function finish() {
+        C.busy = ''; C.checked = true;
+        var bad = C.items.filter(function (it) { return it.state === 'bad'; }).length;
+        C.note = bad ? plural(bad, 'link') + ' did not respond. A site that responds can still show "page not found" for a specific page, because browsers do not let a page read that.' : 'Every site responded. A site that responds can still show "page not found" for a specific page, because browsers do not let a page read that.';
+        render();
+      }
+      function next() {
+        if (token !== C.token || i >= total) return;
+        var it = list[i++];
+        probe(it.url).then(function (s) {
+          if (token !== C.token) return;
+          it.state = s; done++;
+          C.busy = 'Checking ' + done + ' of ' + total + '...';
+          if (done === total) finish(); else { if (done % 5 === 0) render(); next(); }
+        });
+      }
+      if (!total) { finish(); return; }
+      for (var k = 0; k < Math.min(6, total); k++) next();
+    });
+  }
+
+  /* ---------- rendering ---------- */
+  function stateHtml(it) {
+    if (it.state === 'ok') return '<span class="cl-st ok">Responds</span>';
+    if (it.state === 'bad') return '<span class="cl-st bad">No response</span>';
+    if (it.state === 'unknown') return '<span class="cl-st" title="This page is on https and cannot test http links">Can\'t check</span>';
+    return '<span class="cl-same">-</span>';
+  }
+  function render() {
+    var n = C.items.length;
+    var chip = $('clChip'); chip.hidden = !C.name;
+    chip.textContent = C.name; chip.className = 'chip';
+    $('clFileLine').textContent = C.name;
+    $('clCount').textContent = n || C.rejected.length ? plural(n, 'clean link') : 'No links yet';
+    var changed = C.items.filter(function (i) { return i.changes.length; }).length;
+    var bits = [changed + ' cleaned', (n - changed) + ' already clean'];
+    if (C.dups) bits.push(plural(C.dups, 'duplicate') + ' removed');
+    if (C.rejected.length) bits.push(C.rejected.length + ' rejected');
+    $('clSub').textContent = n || C.rejected.length ? bits.join('. ') + '.' : '';
+    ['clCheck', 'clCopy', 'clXlsx', 'clSend'].forEach(function (id) { $(id).disabled = !n; });
+    $('clFoot').hidden = !n;
+    var bad = C.items.some(function (i) { return i.state === 'bad'; });
+    $('clCheck').textContent = bad ? 'Remove no-response links' : 'Check they respond';
+    $('clCheck').setAttribute('data-mode', bad ? 'remove' : 'check');
+    var busy = $('clBusy'); busy.hidden = !C.busy; busy.textContent = C.busy;
+    var note = $('clNote'); note.hidden = !C.note; note.textContent = C.note;
+    var body = $('clRows');
+    if (!n) {
+      body.innerHTML = '<tr><td colspan="6" class="none">Note: paste messy links above or add a file. Your clean links appear here, with tracking codes, redirect wrappers and garbage lines removed.</td></tr>';
+      $('clMoreWrap').hidden = true; $('clCap').textContent = '';
+    } else {
+      var html = '', shown = Math.min(n, C.limit);
+      for (var i = 0; i < shown; i++) {
+        var it = C.items[i];
+        html += '<tr><td class="num">' + (i + 1) + '</td>' +
+          '<td class="cl-orig" title="' + esc(it.orig) + '">' + esc(it.orig) + '</td>' +
+          '<td class="col-url"><a href="' + esc(it.url) + '" target="_blank" rel="noopener noreferrer" title="' + esc(it.url) + '">' + esc(it.url) + '</a></td>' +
+          '<td>' + (it.changes.length ? it.changes.map(function (c) { return '<span class="cl-chip">' + esc(c) + '</span>'; }).join('') : '<span class="cl-same">No change</span>') + '</td>' +
+          '<td>' + stateHtml(it) + '</td>' +
+          '<td class="act"><button class="btn sm icon" type="button" data-cp="' + i + '" aria-label="Copy this link" title="Copy link"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/></svg></button><button class="btn sm icon" type="button" data-rm="' + i + '" aria-label="Remove this link" title="Remove"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 7h14M10 7V4h4v3M7 7l1 13h8l1-13"/></svg></button></td></tr>';
+      }
+      body.innerHTML = html;
+      $('clMoreWrap').hidden = n <= shown;
+      $('clMore').textContent = 'Show ' + Math.min(300, n - shown) + ' more';
+      $('clCap').textContent = 'Showing ' + shown + ' of ' + n + '. "Responds" means the website answered. It does not prove the exact page exists.';
+    }
+    var rw = $('clRejWrap');
+    rw.hidden = !C.rejected.length;
+    if (C.rejected.length) {
+      $('clRejSum').textContent = plural(C.rejected.length, 'line') + ' removed as garbage';
+      $('clRejList').innerHTML = C.rejected.slice(0, 200).map(function (r) { return '<li><span>' + esc(r.orig.slice(0, 160)) + '</span><span>' + esc(r.reason) + '</span></li>'; }).join('') +
+        (C.rejected.length > 200 ? '<li><span>And ' + (C.rejected.length - 200) + ' more</span><span></span></li>' : '');
+    }
+  }
+
+  /* ---------- actions ---------- */
+  $('clCheck').addEventListener('click', function () {
+    if (this.getAttribute('data-mode') === 'remove') {
+      C.items = C.items.filter(function (it) { return it.state !== 'bad'; });
+      C.note = 'Links with no response were removed.'; render();
+    } else runCheck();
+  });
+  $('clCopy').addEventListener('click', function () {
+    if (C.items.length && LD.copy) LD.copy(C.items.map(function (i) { return i.url; }).join('\n'), 'Copied ' + plural(C.items.length, 'link') + '.');
+  });
+  $('clXlsx').addEventListener('click', function () {
+    if (!C.items.length || typeof XLSX === 'undefined' || !LD.saveBlob) return;
+    var aoa = [['#', 'Original', 'Clean link', 'What was removed', 'Responds']];
+    C.items.forEach(function (it, i) { aoa.push([i + 1, it.orig, it.url, it.changes.join('; '), it.state === 'ok' ? 'Yes' : it.state === 'bad' ? 'No' : '']); });
+    var ws = XLSX.utils.aoa_to_sheet(aoa);
+    C.items.forEach(function (it, i) { var c = ws['C' + (i + 2)]; if (c) c.l = { Target: it.url, Tooltip: it.url }; });
+    ws['!cols'] = [{ wch: 5 }, { wch: 60 }, { wch: 60 }, { wch: 36 }, { wch: 10 }];
+    var wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Clean links');
+    var out = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+    var base = C.example ? 'sample' : (C.name.replace(/\.[^.]+$/, '') || 'links');
+    LD.saveBlob(new Blob([out], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), base + '-clean.xlsx', 'Saved ' + base + '-clean.xlsx');
+  });
+  $('clSend').addEventListener('click', function () {
+    if (!C.items.length) return;
+    LD.send(C.items.map(function (it, i) { return { url: it.url, label: 'Clean link ' + (i + 1), row: i + 1 }; }), C.example ? 'Example text' : C.name);
+    LD.show('batch');
+  });
+  $('clMore').addEventListener('click', function () { C.limit += 300; render(); });
+  $('clRows').addEventListener('click', function (e) {
+    var cp = e.target.closest && e.target.closest('[data-cp]');
+    if (cp) { var it = C.items[parseInt(cp.getAttribute('data-cp'), 10)]; if (it && LD.copy) LD.copy(it.url, 'Copied the link.'); return; }
+    var b = e.target.closest && e.target.closest('[data-rm]');
+    if (!b) return;
+    C.items.splice(parseInt(b.getAttribute('data-rm'), 10), 1); render();
+  });
+  $('clCopy2').addEventListener('click', function () { $('clCopy').click(); });
+  $('clXlsx2').addEventListener('click', function () { $('clXlsx').click(); });
+  $('clText').addEventListener('input', function () {
+    clearTimeout(timer);
+    $('clDropTitle').textContent = 'Drop a spreadsheet or text file or browse';
+    timer = setTimeout(runText, 250);
+  });
+  ['clQuery', 'clWrap', 'clDedupe', 'clBare', 'clAnchor', 'clSlash', 'clHttps'].forEach(function (id) {
+    $(id).addEventListener('change', function () { if (C.lastFile) process(C.lastFile.text, C.lastFile.name, false); else runText(); });
+  });
+  $('clFile').addEventListener('change', function (e) { runFile(e.target.files[0]); e.target.value = ''; });
+  var drop = $('clDrop');
+  ['dragenter', 'dragover'].forEach(function (ev) { drop.addEventListener(ev, function (e) { e.preventDefault(); drop.classList.add('over'); }); });
+  ['dragleave', 'drop'].forEach(function (ev) { drop.addEventListener(ev, function (e) { e.preventDefault(); drop.classList.remove('over'); }); });
+  drop.addEventListener('drop', function (e) { runFile(e.dataTransfer.files[0]); });
+
+  /* lets other tools hand links to the cleaner */
+  LD.cleanLoad = function (text, name) {
+    $('clText').value = text;
+    $('clDropTitle').textContent = 'Drop a spreadsheet or text file or browse';
+    C.lastFile = null;
+    process(text, name, false);
+  };
+
+  runText();
+})();
+</script>
