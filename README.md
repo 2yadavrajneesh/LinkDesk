@@ -6,6 +6,7 @@ A single-page, browser-only tool for working with web links in spreadsheets and 
 - **Open in batches:** load links and open them in batches of 10, 20, 30 or 50 tabs, with progress tracking.
 - **Extract links:** paste text or add a Word, PDF, text or HTML file and pull out every web address, including links hidden behind clickable words.
 - **Link Cleaner:** paste messy links or add a file. It removes everything after the `?` when a page does not need it (for example `x.com/user/status/123?a=abc` becomes `x.com/user/status/123`), removes tracking codes (`utm_`, `fbclid`, `gclid` and others), unwraps redirect links from Google, Facebook, Outlook and similar, fixes broken schemes and defanged links, drops invalid lines and duplicates, and can check that each site responds.
+- **Sheet Merger:** bring everything from a second Excel workbook into your first one without overwriting or duplicating what is already there. Match rows by a key column, choose which headers to compare, and download the merged workbook with a Merge Report sheet.
 
 Everything runs in the browser. Files are never uploaded anywhere.
 
