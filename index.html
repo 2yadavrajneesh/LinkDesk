@@ -351,33 +351,6 @@ tr.is-opened td:not(.act) { color: var(--muted); }
 .cl-rej li:last-child { border-bottom: 0; }
 .cl-rej li span:first-child { font: 400 12px var(--mono); overflow-wrap: anywhere; min-width: 0; }
 .cl-rej li span:last-child { color: var(--warn); font-size: 12.5px; white-space: nowrap; }
-
-/* Sheet Merger */
-.mg-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
-.mg-lab { font-size: 12px; font-weight: 600; color: var(--muted); }
-.mg-drop { padding: 20px 16px; }
-.mg-drop strong { overflow-wrap: anywhere; }
-.mg-quick { display: flex; gap: 6px; flex-wrap: wrap; }
-.mg-chips { display: flex; flex-wrap: wrap; gap: 6px; max-height: 200px; overflow: auto; }
-.mg-chip { display: inline-flex; align-items: center; gap: 8px; border: 1px solid var(--line); border-radius: 8px; padding: 4px 10px; cursor: pointer; background: var(--bg); font-size: 13px; }
-.mg-chip:has(input:checked) { background: var(--accent-soft); border-color: var(--accent); }
-.mg-chip input { accent-color: var(--accent); }
-.mg-tag { font: 700 10.5px var(--ui); font-style: normal; text-transform: uppercase; letter-spacing: 0.06em; }
-.mg-tag.both { color: var(--ok); }
-.mg-tag.a { color: var(--accent); }
-.mg-tag.b { color: var(--warn); }
-.mg-actions { display: flex; align-items: center; gap: 10px 12px; flex-wrap: wrap; }
-.mg-actions .hint.err { color: var(--warn); font-weight: 600; }
-.mg-actions .hint.ok { color: var(--ok); font-weight: 600; }
-.mg-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; }
-.mg-stat { border: 1px solid var(--line); border-radius: 10px; padding: 10px 14px; background: var(--bg); }
-.mg-stat b { display: block; font-size: 22px; font-weight: 800; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
-.mg-stat span { color: var(--muted); font-size: 12.5px; }
-.mg-h { font: 600 11.5px var(--ui); text-transform: uppercase; letter-spacing: 0.09em; color: var(--muted); }
-.mg-tbl { overflow: auto; max-height: 340px; border: 1px solid var(--line); border-radius: 8px; }
-.mg-tbl table { min-width: 640px; }
-.mg-tbl td { white-space: nowrap; max-width: 320px; overflow: hidden; text-overflow: ellipsis; }
-@media (max-width: 860px) { .mg-grid { grid-template-columns: minmax(0, 1fr); } }
 </style>
 
 <div class="page">
@@ -405,7 +378,6 @@ tr.is-opened td:not(.act) { color: var(--muted); }
     <button class="vt" type="button" role="tab" id="tab-batch" data-view="batch" aria-selected="true" aria-controls="view-batch">Open in batches</button>
     <button class="vt" type="button" role="tab" id="tab-extract" data-view="extract" aria-selected="false" aria-controls="view-extract">Extract links</button>
     <button class="vt" type="button" role="tab" id="tab-clean" data-view="clean" aria-selected="false" aria-controls="view-clean">Link Cleaner</button>
-    <button class="vt" type="button" role="tab" id="tab-merge" data-view="merge" aria-selected="false" aria-controls="view-merge">Sheet Merger</button>
   </nav>
 
   <div class="view" id="view-batch" role="tabpanel" aria-labelledby="tab-batch">
@@ -660,80 +632,6 @@ tr.is-opened td:not(.act) { color: var(--muted); }
         <ul id="clRejList"></ul>
       </details>
     </section>
-  </div>
-
-  <div class="view" id="view-merge" role="tabpanel" aria-labelledby="tab-merge" hidden>
-    <section class="card" aria-labelledby="h-mg">
-      <div class="card-head">
-        <span class="step">1</span>
-        <h2 id="h-mg">Choose your two workbooks</h2>
-      </div>
-      <div class="mg-grid">
-        <div class="field">
-          <span class="mg-lab">Base workbook (kept as it is)</span>
-          <label class="drop mg-drop" id="mgDropA">
-            <input class="sr" type="file" id="mgFa" accept=".xlsx,.xls,.xlsm,.csv">
-            <span class="drop-ic" data-ic="upload"></span>
-            <strong id="mgTa">Choose the base workbook</strong>
-            <small>.xlsx, .xls or .csv</small>
-          </label>
-          <p class="hint" id="mgIa"></p>
-        </div>
-        <div class="field">
-          <span class="mg-lab">Source workbook (data to bring in)</span>
-          <label class="drop mg-drop" id="mgDropB">
-            <input class="sr" type="file" id="mgFb" accept=".xlsx,.xls,.xlsm,.csv">
-            <span class="drop-ic" data-ic="upload"></span>
-            <strong id="mgTb">Choose the source workbook</strong>
-            <small>.xlsx, .xls or .csv</small>
-          </label>
-          <p class="hint" id="mgIb"></p>
-        </div>
-      </div>
-      <p class="ex-limit" role="note"><span data-ic="warn"></span>Maximum file size is 100 MB per file.</p>
-    </section>
-
-    <section class="card" aria-labelledby="h-mg2">
-      <div class="card-head">
-        <span class="step">2</span>
-        <h2 id="h-mg2">Choose what to merge</h2>
-      </div>
-      <div class="seg" id="mgMode" role="group" aria-label="Merge mode" style="align-self: flex-start">
-        <button type="button" data-mode="single" aria-pressed="true">Compare one sheet pair</button>
-        <button type="button" data-mode="all" aria-pressed="false">Scan all sheets</button>
-      </div>
-      <div class="mg-grid" id="mgPick">
-        <div class="field"><label for="mgSa">Base sheet</label><select id="mgSa"></select></div>
-        <div class="field"><label for="mgSb">Source sheet</label><select id="mgSb"></select></div>
-      </div>
-      <p class="hint" id="mgAllNote" hidden>Every source sheet is matched to a base sheet by name or by similar headers.</p>
-      <div class="field">
-        <span class="mg-lab">Headers to compare</span>
-        <p class="hint" id="mgHsum">Note: choose both workbooks above to see their headers.</p>
-        <div class="mg-quick">
-          <button class="btn sm" type="button" id="mgAll">All</button>
-          <button class="btn sm" type="button" id="mgCom">Common only</button>
-          <button class="btn sm" type="button" id="mgNone">None</button>
-        </div>
-        <div class="mg-chips" id="mgChips"></div>
-      </div>
-      <div class="field cl-query">
-        <label for="mgKey">Match rows by</label>
-        <select id="mgKey"><option value="none">No key: compare whole rows</option></select>
-      </div>
-      <div class="ex-opts">
-        <label class="check"><input type="checkbox" id="mgNew" checked><span>Add source sheets with no match as new sheets</span></label>
-        <label class="check"><input type="checkbox" id="mgRep" checked><span>Add a "Merge Report" sheet</span></label>
-      </div>
-      <div class="mg-actions">
-        <button class="btn primary" type="button" id="mgGo" disabled>Compare &amp; merge</button>
-        <button class="btn" type="button" id="mgDl" disabled>Download merged workbook</button>
-        <span class="hint" id="mgMsg"></span>
-      </div>
-      <p class="hint">Existing values in your base workbook are never overwritten. Cell colors and fonts are not carried over.</p>
-    </section>
-
-    <section class="card" id="mgOut" hidden aria-live="polite"></section>
   </div>
 </div>
 
@@ -1616,15 +1514,13 @@ var LD = {
     maker: 'Make spreadsheet links clickable',
     extract: 'Extract links from text, Word and PDF files',
     clean: 'Remove tracking codes and wrappers, keep clean links',
-    merge: 'Merge a second workbook into your first without overwriting it',
     batch: 'Open spreadsheet links in batches'
   };
   function show(v) {
-    if (v !== 'maker' && v !== 'extract' && v !== 'clean' && v !== 'merge') v = 'batch';
+    if (v !== 'maker' && v !== 'extract' && v !== 'clean') v = 'batch';
     $('view-maker').hidden = v !== 'maker';
     $('view-extract').hidden = v !== 'extract';
     $('view-clean').hidden = v !== 'clean';
-    $('view-merge').hidden = v !== 'merge';
     $('view-batch').hidden = v !== 'batch';
     $('topTools').hidden = v !== 'batch';
     $('tagline').textContent = TAGS[v];
@@ -1633,7 +1529,7 @@ var LD = {
   }
   document.querySelectorAll('.vt').forEach(function (b) { b.addEventListener('click', function () { show(b.getAttribute('data-view')); }); });
   var start = 'batch';
-  try { var sv = localStorage.getItem(LSV); if (sv === 'maker' || sv === 'extract' || sv === 'clean' || sv === 'merge') start = sv; } catch (e) {}
+  try { var sv = localStorage.getItem(LSV); if (sv === 'maker' || sv === 'extract' || sv === 'clean') start = sv; } catch (e) {}
   LD.show = show;
   show(start);
 
@@ -1973,6 +1869,8 @@ var LD = {
   runText();
 })();
 </script>
+</body>
+</html>
 
 <script>
 (function () {
@@ -2369,160 +2267,3 @@ var LD = {
   runText();
 })();
 </script>
-
-<script>
-(function () {
-  'use strict';
-  var $ = function (id) { return document.getElementById(id); };
-
-  // ===== Excel Sheet Merger core (unchanged) =====
-  const isEmpty=v=>v===undefined||v===null||String(v).trim()==='';
-  const norm=v=>String(v??'').trim().toLowerCase().replace(/\s+/g,' ');
-  function readSheet(ws){
-    const aoa=XLSX.utils.sheet_to_json(ws,{header:1,defval:'',raw:true});
-    const headers=(aoa[0]||[]).map((h,i)=>isEmpty(h)?'Column '+(i+1):String(h).trim());
-    return {aoa,headers};
-  }
-  function setCell(ws,r,c,v){
-    const a=XLSX.utils.encode_cell({r,c});
-    ws[a]={t:typeof v==='number'?'n':typeof v==='boolean'?'b':'s',v};
-    const rg=XLSX.utils.decode_range(ws['!ref']||'A1');
-    if(r>rg.e.r)rg.e.r=r; if(c>rg.e.c)rg.e.c=c; ws['!ref']=XLSX.utils.encode_range(rg);
-  }
-  // Merges sheet B into sheet A in place. Never overwrites existing non-empty cells.
-  // keyOpt: 'none' or a header name; cols: Set of normalized headers to compare (null = all).
-  function mergeSheet(wsA,wsB,sheetName,keyOpt,cols){
-    const A=readSheet(wsA),B=readSheet(wsB),log=[];
-    const headers=A.headers.slice(), width0=headers.length;
-    const rowsA=A.aoa.slice(1), rowsB=B.aoa.slice(1).filter(r=>r.some(v=>!isEmpty(v)));
-    const map=B.headers.map(h=>{ if(cols&&!cols.has(norm(h)))return -1;
-      let i=headers.findIndex(x=>norm(x)===norm(h));
-      if(i<0){headers.push(h);i=headers.length-1;setCell(wsA,0,i,h);log.push({type:'Column added',sheet:sheetName,row:1,col:h,old:'',inc:'(new column)'});}return i;});
-    const used=map.map((c,j)=>[c,j]).filter(p=>p[0]>=0);
-    const kn=keyOpt&&keyOpt!=='none'?norm(keyOpt):null;
-    const kA=kn?A.headers.findIndex(x=>norm(x)===kn):-1, kB=kn?B.headers.findIndex(x=>norm(x)===kn):-1;
-    const useKey=kA>=0&&kB>=0;
-    const idx=new Map(), sigs=new Set(); let next=A.aoa.length;
-    const sig=get=>used.map(([c,j])=>norm(get(c,j))).join('\u0001');
-    rowsA.forEach((r,i)=>{ if(useKey){const k=norm(r[kA]); if(k&&!idx.has(k))idx.set(k,i+1);} sigs.add(sig(c=>r[c])); });
-    const st={filled:0,added:0,dups:0,conflicts:0};
-    rowsB.forEach(r=>{
-      if(!used.some(([c,j])=>!isEmpty(r[j])))return;
-      const k=useKey?norm(r[kB]):'';
-      if(useKey&&k&&idx.has(k)){
-        const sr=idx.get(k), cur=A.aoa[sr]||[]; let any=false;
-        used.forEach(([c,j])=>{const nv=r[j]; if(isEmpty(nv))return; const ov=cur[c];
-          if(isEmpty(ov)){setCell(wsA,sr,c,nv);cur[c]=nv;st.filled++;any=true;log.push({type:'Cell filled',sheet:sheetName,row:sr+1,col:headers[c],old:'',inc:nv});}
-          else if(norm(ov)!==norm(nv)){st.conflicts++;log.push({type:'Conflict (base kept)',sheet:sheetName,row:sr+1,col:headers[c],old:ov,inc:nv});}});
-        if(!any)st.dups++; return;
-      }
-      const s=sig((c,j)=>r[j]); if(sigs.has(s)){st.dups++;return;}
-      used.forEach(([c,j])=>{if(!isEmpty(r[j]))setCell(wsA,next,c,r[j]);});
-      if(useKey&&k)idx.set(k,next); sigs.add(s); A.aoa[next]=[]; used.forEach(([c,j])=>A.aoa[next][c]=r[j]);
-      st.added++; log.push({type:'Row added',sheet:sheetName,row:next+1,col:'',old:'',inc:used.map(([c,j])=>r[j]).filter(v=>!isEmpty(v)).slice(0,4).join(' | ')}); next++;
-    });
-    return {stats:st,log,key:useKey?headers[kA]:null,newCols:headers.length-width0};
-  }
-  function matchSheets(wbA,wbB){
-    const hs=n=>new Set(readSheet(wbA.Sheets[n]).headers.map(norm));
-    return wbB.SheetNames.map(nb=>{
-      let na=wbA.SheetNames.find(x=>norm(x)===norm(nb));
-      if(!na){const hb=new Set(readSheet(wbB.Sheets[nb]).headers.map(norm));let best=0;
-        wbA.SheetNames.forEach(x=>{const ha=hs(x);const inter=[...hb].filter(h=>ha.has(h)).length;const j=inter/(new Set([...ha,...hb]).size||1);if(j>best&&j>=.5){best=j;na=x;}});}
-      return {a:na||null,b:nb};
-    });
-  }
-  function mergeWorkbooks(wbA,wbB,o){
-    const res=[],log=[]; const tot={filled:0,added:0,dups:0,conflicts:0,cols:0,sheetsAdded:0};
-    let cols=o.cols?new Set(o.cols):null; if(cols&&o.key&&o.key!=='none')cols.add(norm(o.key));
-    const pairs=o.mode==='all'?matchSheets(wbA,wbB):[{a:o.sheetA,b:o.sheetB}];
-    pairs.forEach(p=>{
-      if(!p.a){ if(o.newSheets){let n=p.b,i=2;while(wbA.SheetNames.includes(n))n=(p.b.slice(0,28)+'_'+i++);
-          const src=readSheet(wbB.Sheets[p.b]).aoa; const keep=src[0]?src[0].map((h,i)=>(!cols||cols.has(norm(isEmpty(h)?'Column '+(i+1):h)))?i:-1).filter(i=>i>=0):[];
-          if(!keep.length){res.push({a:'—',b:p.b,note:'No match – no selected headers'});return;}
-          XLSX.utils.book_append_sheet(wbA,XLSX.utils.aoa_to_sheet(src.map(r=>keep.map(i=>r[i]))),n);tot.sheetsAdded++;
-          res.push({a:'(new) '+n,b:p.b,note:'No match – copied'});log.push({type:'Sheet added',sheet:n,row:'',col:'',old:'',inc:'copied from "'+p.b+'"'});}
-        else res.push({a:'—',b:p.b,note:'No match – skipped'}); return;}
-      const r=mergeSheet(wbA.Sheets[p.a],wbB.Sheets[p.b],p.a,o.key,cols);
-      ['filled','added','dups','conflicts'].forEach(k=>tot[k]+=r.stats[k]);tot.cols+=r.newCols;
-      res.push({a:p.a,b:p.b,key:r.key,...r.stats,newCols:r.newCols});log.push(...r.log);
-    });
-    if(o.report){const rows=[['Type','Sheet','Row','Column','Base value','Incoming value'],...log.map(l=>[l.type,l.sheet,l.row,l.col,l.old,l.inc])];
-      let n='Merge Report';while(wbA.SheetNames.includes(n))n+='_';XLSX.utils.book_append_sheet(wbA,XLSX.utils.aoa_to_sheet(rows),n);}
-    return {res,log,tot};
-  }
-  // Header inventory across the selected sheet pair (or every sheet in both workbooks).
-  function headerInfo(wbA,wbB,mode,sa,sb){
-    const m=new Map(), add=(wb,names,f)=>names.forEach(n=>readSheet(wb.Sheets[n]).headers.forEach(h=>{const k=norm(h);if(!m.has(k))m.set(k,{name:h,k,a:false,b:false});m.get(k)[f]=true;}));
-    add(wbA,mode==='all'?wbA.SheetNames:[sa],'a'); add(wbB,mode==='all'?wbB.SheetNames:[sb],'b');
-    return [...m.values()];
-  }
-  // ===== end of core =====
-
-  const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-  let wbA=null,wbB=null,srcA=null,nameA='',merged=null,H=[],MODE='single';
-  function setMsg(text, kind) { var m = $('mgMsg'); m.textContent = text; m.className = 'hint' + (kind ? ' ' + kind : ''); }
-  function fill(sel,names){sel.innerHTML=names.map(n=>'<option>'+esc(n)+'</option>').join('')}
-  function chips(){
-    if(!wbA||!wbB){return}
-    H=headerInfo(wbA,wbB,MODE,$('mgSa').value,$('mgSb').value);
-    const both=H.filter(h=>h.a&&h.b).length;
-    $('mgHsum').innerHTML='<b>'+both+'</b> common, <b>'+H.filter(h=>h.a&&!h.b).length+'</b> base only, <b>'+H.filter(h=>!h.a&&h.b).length+'</b> source only. Tick the headers to compare and bring in.';
-    $('mgChips').innerHTML=H.map((h,i)=>'<label class="mg-chip"><input type="checkbox" data-i="'+i+'" checked><span>'+esc(h.name)+'</span><i class="mg-tag '+(h.a&&h.b?'both':h.a?'a':'b')+'">'+(h.a&&h.b?'both':h.a?'base':'source')+'</i></label>').join('');
-    $('mgChips').onchange=keys;keys();
-  }
-  const sel=()=>[...document.querySelectorAll('#mgChips input:checked')].map(i=>H[i.dataset.i]);
-  function keys(){const cur=$('mgKey').value;$('mgKey').innerHTML='<option value="none">No key: compare whole rows</option>'+sel().filter(h=>h.a&&h.b).map(h=>'<option>'+esc(h.name)+'</option>').join('');
-    if([...$('mgKey').options].some(o=>o.value===cur))$('mgKey').value=cur;}
-  function setAll(f){document.querySelectorAll('#mgChips input').forEach(i=>i.checked=f(H[i.dataset.i]));keys()}
-  $('mgAll').onclick=()=>setAll(()=>true);$('mgNone').onclick=()=>setAll(()=>false);$('mgCom').onclick=()=>setAll(h=>h.a&&h.b);
-  function upd(){$('mgGo').disabled=!(wbA&&wbB);const all=MODE==='all';$('mgPick').hidden=all;$('mgAllNote').hidden=!all;chips()}
-  function load(f,w){
-    if(!f)return; setMsg('');
-    var big=LD.checkFile(f); if(big){setMsg(big,'err');return}
-    if(typeof XLSX==='undefined'){setMsg('The spreadsheet reader did not load. Reload the page.','err');return}
-    f.arrayBuffer().then(buf=>{const wb=XLSX.read(buf,{type:'array',cellStyles:true});LD.checkCells(wb);return [buf,wb]}).then(([buf,wb])=>{
-      const info=wb.SheetNames.length+' sheet'+(wb.SheetNames.length===1?'':'s')+': '+wb.SheetNames.join(', ');
-      if(w==='a'){wbA=wb;srcA=buf;nameA=f.name;fill($('mgSa'),wb.SheetNames);$('mgTa').textContent=f.name;$('mgIa').textContent=info}
-      else{wbB=wb;fill($('mgSb'),wb.SheetNames);$('mgTb').textContent=f.name;$('mgIb').textContent=info}
-      $('mgDl').disabled=true;upd();
-    }).catch(e=>setMsg(e&&e.message==='big'?'That workbook is too large. The limit is 1,000,000 cells per sheet.':'Could not read '+f.name+'. Check that it is a real Excel or CSV file.','err'));
-  }
-  $('mgFa').onchange=e=>{load(e.target.files[0],'a');e.target.value=''};
-  $('mgFb').onchange=e=>{load(e.target.files[0],'b');e.target.value=''};
-  [['mgDropA','a'],['mgDropB','b']].forEach(function(p){
-    var d=$(p[0]);
-    ['dragenter','dragover'].forEach(function(ev){d.addEventListener(ev,function(e){e.preventDefault();d.classList.add('over')})});
-    ['dragleave','drop'].forEach(function(ev){d.addEventListener(ev,function(e){e.preventDefault();d.classList.remove('over')})});
-    d.addEventListener('drop',function(e){load(e.dataTransfer.files[0],p[1])});
-  });
-  $('mgSa').onchange=$('mgSb').onchange=chips;
-  document.querySelectorAll('#mgMode button').forEach(function(b){b.onclick=function(){
-    MODE=b.getAttribute('data-mode');
-    document.querySelectorAll('#mgMode button').forEach(function(x){x.setAttribute('aria-pressed',String(x===b))});
-    upd();
-  }});
-  $('mgGo').onclick=()=>{
-    const chosen=sel(); if(!chosen.length){setMsg('Select at least one header.','err');return}
-    merged=XLSX.read(srcA,{type:'array',cellStyles:true}); // fresh copy: re-running never double-applies
-    const m=mergeWorkbooks(merged,wbB,{mode:MODE,sheetA:$('mgSa').value,sheetB:$('mgSb').value,key:$('mgKey').value,cols:chosen.map(h=>h.k),newSheets:$('mgNew').checked,report:$('mgRep').checked});
-    render(m);$('mgDl').disabled=false;setMsg('Done. Review the changes, then download.','ok')};
-  $('mgDl').onclick=()=>{
-    if(!merged||!LD.saveBlob)return;
-    const out=XLSX.write(merged,{bookType:'xlsx',type:'array'});
-    const base=(nameA.replace(/\.[^.]+$/,'')||'workbook')+'-merged';
-    LD.saveBlob(new Blob([out],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}),base+'.xlsx','Saved '+base+'.xlsx');
-  };
-  function render(m){const t=m.tot;$('mgOut').hidden=false;
-    const st=[['Cells filled',t.filled],['Rows added',t.added],['Columns added',t.cols],['Sheets added',t.sheetsAdded],['Duplicates skipped',t.dups],['Conflicts (base kept)',t.conflicts]];
-    $('mgOut').innerHTML='<div class="card-head"><span class="step">3</span><h2>Review the result</h2></div>'+
-    '<div class="mg-stats">'+st.map(s=>'<div class="mg-stat"><b>'+s[1]+'</b><span>'+s[0]+'</span></div>').join('')+'</div>'+
-    '<h3 class="mg-h">Sheets scanned</h3><div class="mg-tbl"><table><thead><tr><th>Base sheet</th><th>Source sheet</th><th>Key</th><th>Filled</th><th>Added</th><th>Dups</th><th>Conflicts</th><th>Note</th></tr></thead><tbody>'+
-    m.res.map(r=>'<tr><td>'+esc(r.a)+'</td><td>'+esc(r.b)+'</td><td>'+esc(r.note?'':(r.key||'whole row'))+'</td><td>'+(r.filled??'')+'</td><td>'+(r.added??'')+'</td><td>'+(r.dups??'')+'</td><td>'+(r.conflicts??'')+'</td><td>'+esc(r.note||'')+'</td></tr>').join('')+'</tbody></table></div>'+
-    '<h3 class="mg-h">Change log'+(m.log.length>300?' (first 300 of '+m.log.length+')':'')+'</h3><div class="mg-tbl"><table><thead><tr><th>Type</th><th>Sheet</th><th>Row</th><th>Column</th><th>Base value</th><th>Incoming</th></tr></thead><tbody>'+
-    m.log.slice(0,300).map(l=>'<tr><td>'+esc(l.type)+'</td><td>'+esc(l.sheet)+'</td><td>'+esc(l.row)+'</td><td>'+esc(l.col)+'</td><td>'+esc(l.old)+'</td><td>'+esc(l.inc)+'</td></tr>').join('')+'</tbody></table></div>';}
-  upd();
-})();
-</script>
-</body>
-</html>
